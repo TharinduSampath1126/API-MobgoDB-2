@@ -123,6 +123,7 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       message: 'Login successful',
+      token: token, // Send token for frontend decoding
       user: {
         id: user._id,
         name: user.name,

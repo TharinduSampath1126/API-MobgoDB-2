@@ -87,6 +87,7 @@ export const refreshToken = async (req, res) => {
     
     res.json({
       success: true,
+      token: newToken, // Send new token for frontend decoding
       user: {
         id: user._id,
         name: user.name,

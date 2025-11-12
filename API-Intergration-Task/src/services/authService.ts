@@ -6,6 +6,13 @@ export interface AuthResponse {
     name: string;
     email: string;
   };
+  tokenData: {
+    userId: string;
+    name: string;
+    email: string;
+    iat: number;
+    exp: number;
+  };
 }
 
 export interface LoginCredentials {
@@ -22,38 +29,51 @@ export interface RegisterCredentials {
 }
 
 class AuthService {
-  // Check if user is authenticated by calling backend
-  async isAuthenticated(): Promise<boolean> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/protected/profile`, {
-        method: 'GET',
-        credentials: 'include'
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
+  // Store decoded token data in cookie
+  setTokenData(tokenData: any): void {
+    document.cookie = `token_data=${JSON.stringify(tokenData)}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
   }
 
-  // Get user data from backend
-  async getUserFromToken(): Promise<{ id: string; name: string; email: string } | null> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/protected/profile`, {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.user;
+  // Get decoded token data from cookie
+  getTokenData(): any {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'token_data') {
+        try {
+          return JSON.parse(decodeURIComponent(value));
+        } catch {
+          return null;
+        }
       }
-      
-      // 401 is expected when not authenticated - return null silently
-      return null;
-    } catch (error) {
-      // Silently handle network errors during auth check
-      return null;
     }
+    return null;
+  }
+
+  // Remove token data cookie
+  removeTokenData(): void {
+    document.cookie = 'token_data=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  }
+
+  // Check if user is authenticated
+  isAuthenticated(): boolean {
+    const tokenData = this.getTokenData();
+    if (!tokenData) return false;
+    
+    // Check if token is expired
+    return tokenData.exp > Date.now() / 1000;
+  }
+
+  // Get user data from token data
+  getUserFromToken(): { id: string; name: string; email: string } | null {
+    const tokenData = this.getTokenData();
+    if (!tokenData) return null;
+    
+    return {
+      id: tokenData.userId,
+      name: tokenData.name,
+      email: tokenData.email
+    };
   }
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -76,8 +96,13 @@ class AuthService {
         throw new Error(data.message || 'Login failed');
       }
 
+      // Decode and store token data
+      const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+      this.setTokenData(tokenPayload);
+      
       return {
-        user: data.user
+        user: data.user,
+        tokenData: tokenPayload
       };
     } catch (error: any) {
       throw new Error(error.message || 'Network error');
@@ -126,8 +151,13 @@ class AuthService {
         throw new Error(data.message || 'Token refresh failed');
       }
 
+      // Decode and update token data
+      const tokenPayload = JSON.parse(atob(data.token.split('.')[1]));
+      this.setTokenData(tokenPayload);
+      
       return {
-        user: data.user
+        user: data.user,
+        tokenData: tokenPayload
       };
     } catch (error: any) {
       throw new Error(error.message || 'Network error');
@@ -162,8 +192,12 @@ class AuthService {
         method: 'POST',
         credentials: 'include'
       });
+      // Remove token data cookie
+      this.removeTokenData();
     } catch (error) {
       console.error('Logout error:', error);
+      // Still remove token data cookie even if server call fails
+      this.removeTokenData();
     }
   }
 
