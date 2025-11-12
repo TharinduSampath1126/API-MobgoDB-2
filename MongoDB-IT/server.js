@@ -3,9 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
-import userRoutes from "./Routes/usersRoutes.js";
-import authRoutes from "./Routes/authRoutes.js";
-import protectedRoutes from "./Routes/protectedRoutes.js";
+import userRoutes from "./routes/usersRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import protectedRoutes from "./routes/protectedRoutes.js";
 
 dotenv.config();
 const app = express();

@@ -1,5 +1,5 @@
 import express from 'express';
-import User from '../Models/UserModels.js';
+import User from '../models/UserModels.js';
 
 const router = express.Router();
 
