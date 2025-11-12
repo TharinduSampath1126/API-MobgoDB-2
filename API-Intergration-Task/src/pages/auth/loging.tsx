@@ -7,9 +7,6 @@ import { toast } from 'sonner';
 
 // Zod schema for login validation
 const loginSchema = z.object({
-  name: z.string()
-    .min(1, 'Name is required')
-    .min(2, 'Name must be at least 2 characters long'),
   email: z.string()
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
@@ -19,13 +16,11 @@ const loginSchema = z.object({
 });
 
 interface LoginData {
-  name: string;
   email: string;
   password: string;
 }
 
 interface ValidationErrors {
-  name?: string;
   email?: string;
   password?: string;
 }
@@ -38,7 +33,6 @@ function loging({ onLogin }: LogingProps) {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState<LoginData>({
-    name: '',
     email: '',
     password: ''
   });
@@ -90,7 +84,6 @@ function loging({ onLogin }: LogingProps) {
       
       // Use JWT authentication
       await login({
-        name: formData.name,
         email: formData.email,
         password: formData.password,
       });
@@ -122,30 +115,7 @@ function loging({ onLogin }: LogingProps) {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Input */}
-            <div className="relative">
-              <div className={`flex items-center bg-gray-50 rounded-2xl px-4 py-4 border transition-all ${
-                errors.name 
-                  ? 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100' 
-                  : 'border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100'
-              }`}>
-                <User className="w-5 h-5 text-gray-400 mr-3" />
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="flex-1 bg-transparent outline-none text-gray-700 placeholder-gray-400"
-                />
-              </div>
-              {errors.name && (
-                <div className="flex items-center mt-1 text-red-500 text-sm">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.name}
-                </div>
-              )}
-            </div>
+
             
             {/* Email Input */}
             <div className="relative">

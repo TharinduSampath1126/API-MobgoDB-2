@@ -1,11 +1,11 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import userRoutes from "./routes/users.js";
-import authRoutes from "./routes/auth.js";
-import protectedRoutes from "./routes/protected.js";
+import connectDB from "./config/db.js";
+import userRoutes from "./Routes/usersRoutes.js";
+import authRoutes from "./Routes/authRoutes.js";
+import protectedRoutes from "./Routes/protectedRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -19,9 +19,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Connect MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.log(err));
+connectDB();
 
 // Routes
 app.use("/api/users", userRoutes);

@@ -1,6 +1,6 @@
 import express from 'express';
-import AuthUser from '../models/AuthUser.js';
-import { generateToken, refreshToken } from '../middleware/auth.js';
+import AuthUser from '../Models/AuthUserModels.js';
+import { generateToken, refreshToken } from '../Middleware/authMiddleware.js';
 
 const router = express.Router();
 
