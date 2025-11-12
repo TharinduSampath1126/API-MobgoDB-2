@@ -20,9 +20,10 @@ router.get('/', async (req, res) => {
       }))
     });
   } catch (error) {
+    console.error('Error fetching users:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching users',
+      message: 'Unable to load users. Please check your connection and try again.',
       error: error.message
     });
   }
@@ -36,7 +37,7 @@ router.get('/:id', async (req, res) => {
     if (isNaN(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID'
+        message: 'Please provide a valid user ID (number)'
       });
     }
     
@@ -44,7 +45,7 @@ router.get('/:id', async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: `User with ID ${userId} not found. Please check the ID and try again.`
       });
     }
     
@@ -59,9 +60,10 @@ router.get('/:id', async (req, res) => {
       birthDate: user.birthDate.toISOString().split('T')[0]
     });
   } catch (error) {
+    console.error('Error fetching user:', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user',
+      message: 'Unable to load user details. Please try again later.',
       error: error.message
     });
   }
@@ -77,7 +79,16 @@ router.post('/add', async (req, res) => {
     console.log('Extracted data:', { id, firstName, lastName, age, email, phone, birthDate });
     
     // Validate required fields
-    if (!id || !firstName || !lastName || !age || !email || !phone || !birthDate) {
+    const missingFields = [];
+    if (!id) missingFields.push('ID');
+    if (!firstName) missingFields.push('First Name');
+    if (!lastName) missingFields.push('Last Name');
+    if (!age) missingFields.push('Age');
+    if (!email) missingFields.push('Email');
+    if (!phone) missingFields.push('Phone');
+    if (!birthDate) missingFields.push('Birth Date');
+    
+    if (missingFields.length > 0) {
       console.log('Missing required fields:', {
         id: !id ? 'missing' : 'present',
         firstName: !firstName ? 'missing' : 'present',
@@ -89,7 +100,8 @@ router.post('/add', async (req, res) => {
       });
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields',
+        message: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        missingFields: missingFields,
         required: ['id', 'firstName', 'lastName', 'age', 'email', 'phone', 'birthDate']
       });
     }
@@ -125,26 +137,45 @@ router.post('/add', async (req, res) => {
     if (error.code === 11000) {
       // Duplicate error (could be email or id)
       const field = Object.keys(error.keyPattern)[0];
-      console.log('Duplicate field error:', field);
+      const duplicateValue = Object.values(error.keyValue)[0];
+      console.log('Duplicate field error:', field, 'Value:', duplicateValue);
+      
+      let message;
+      if (field === 'id') {
+        message = `ID ${duplicateValue} is already in use. Please choose a different ID.`;
+      } else if (field === 'email') {
+        message = `Email ${duplicateValue} is already registered. Please use a different email address.`;
+      } else {
+        message = `${field} already exists. Please use a different value.`;
+      }
+      
       res.status(400).json({
         success: false,
-        message: `${field === 'id' ? 'ID' : 'Email'} already exists`,
-        error: `Duplicate ${field}`
+        message: message,
+        error: `Duplicate ${field}`,
+        field: field,
+        value: duplicateValue
       });
     } else if (error.name === 'ValidationError') {
       // Validation error
       const errors = Object.values(error.errors).map(err => err.message);
+      const detailedErrors = Object.keys(error.errors).reduce((acc, field) => {
+        acc[field] = error.errors[field].message;
+        return acc;
+      }, {});
+      
       console.log('Validation errors:', errors);
       res.status(400).json({
         success: false,
-        message: 'Validation error',
-        errors: errors
+        message: 'Please check your input and fix the validation errors',
+        errors: errors,
+        detailedErrors: detailedErrors
       });
     } else {
       console.log('General error:', error.message);
       res.status(500).json({
         success: false,
-        message: 'Error creating user',
+        message: 'Unable to create user. Please try again later.',
         error: error.message
       });
     }
@@ -163,7 +194,24 @@ router.put('/:id', async (req, res) => {
     if (isNaN(paramId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID in URL'
+        message: 'Please provide a valid user ID for updating'
+      });
+    }
+    
+    // Validate required fields for update
+    const missingFields = [];
+    if (!firstName) missingFields.push('First Name');
+    if (!lastName) missingFields.push('Last Name');
+    if (!age) missingFields.push('Age');
+    if (!email) missingFields.push('Email');
+    if (!phone) missingFields.push('Phone');
+    if (!birthDate) missingFields.push('Birth Date');
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Please fill in all required fields: ${missingFields.join(', ')}`,
+        missingFields: missingFields
       });
     }
     
@@ -202,24 +250,44 @@ router.put('/:id', async (req, res) => {
       birthDate: updatedUser.birthDate.toISOString().split('T')[0]
     });
   } catch (error) {
+    console.error('Error updating user:', error);
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
+      const duplicateValue = Object.values(error.keyValue)[0];
+      
+      let message;
+      if (field === 'id') {
+        message = `ID ${duplicateValue} is already in use by another user. Please choose a different ID.`;
+      } else if (field === 'email') {
+        message = `Email ${duplicateValue} is already registered by another user. Please use a different email address.`;
+      } else {
+        message = `${field} already exists. Please use a different value.`;
+      }
+      
       res.status(400).json({
         success: false,
-        message: `${field === 'id' ? 'ID' : 'Email'} already exists`,
-        error: `Duplicate ${field}`
+        message: message,
+        error: `Duplicate ${field}`,
+        field: field,
+        value: duplicateValue
       });
     } else if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message);
+      const detailedErrors = Object.keys(error.errors).reduce((acc, field) => {
+        acc[field] = error.errors[field].message;
+        return acc;
+      }, {});
+      
       res.status(400).json({
         success: false,
-        message: 'Validation error',
-        errors: errors
+        message: 'Please check your input and fix the validation errors',
+        errors: errors,
+        detailedErrors: detailedErrors
       });
     } else {
       res.status(500).json({
         success: false,
-        message: 'Error updating user',
+        message: 'Unable to update user. Please try again later.',
         error: error.message
       });
     }
@@ -234,7 +302,7 @@ router.delete('/:id', async (req, res) => {
     if (isNaN(userId)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user ID'
+        message: 'Please provide a valid user ID for deletion'
       });
     }
     
@@ -243,18 +311,19 @@ router.delete('/:id', async (req, res) => {
     if (!deletedUser) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: `User with ID ${userId} not found. The user may have been already deleted.`
       });
     }
     
     res.json({
       success: true,
-      message: 'User deleted successfully'
+      message: `User ${deletedUser.firstName} ${deletedUser.lastName} has been deleted successfully`
     });
   } catch (error) {
+    console.error('Error deleting user:', error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting user',
+      message: 'Unable to delete user. Please try again later.',
       error: error.message
     });
   }

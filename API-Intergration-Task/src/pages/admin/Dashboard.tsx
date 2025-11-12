@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { Users, BarChart2, Zap, Package, TrendingUp, Activity, UserPlus, Eye } from 'lucide-react';
+import { Users, BarChart2, Zap, Package, TrendingUp, Activity, User, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useUsers } from '@/hooks/useUserQueries';
 import { useProducts } from '@/hooks/useProductQueries';
 import { usePostStore } from '@/store/postStore';
 import { Button } from '@/components/ui/button';
+
 
 // Chart imports
 import 'chart.js/auto';
@@ -13,7 +14,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { data: users = [], isLoading } = useUsers();
-  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: products = [] } = useProducts();
   const newPosts = usePostStore((s) => s.newPosts);
 
   // Combine persisted newly-added users (from local store) with fetched users,
@@ -165,7 +166,7 @@ export default function AdminDashboard() {
       {/* Header Section */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-black bg-clip-text text-transparent">
             Admin Dashboard
           </h1>
           <p className="text-slate-600 mt-2 text-lg">Welcome back! Here's what's happening with your data</p>
@@ -173,18 +174,18 @@ export default function AdminDashboard() {
         <div className="flex gap-3">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/products')}
             className="hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
           >
             <Eye className="w-4 h-4 mr-2" />
             View Products
           </Button>
           <Button 
-            onClick={() => navigate('/newly-added')}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+            onClick={() => navigate('/users')}
+            className=" hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
           >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Add User
+            <User className="w-4 h-4 mr-2" />
+            View Users
           </Button>
         </div>
       </div>
@@ -290,7 +291,7 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
               <Zap className="w-5 h-5 mr-2 text-yellow-500" />
@@ -331,7 +332,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+        {/* <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
           <h3 className="text-xl font-semibold mb-4">System Health</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -347,8 +348,10 @@ export default function AdminDashboard() {
               <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">125ms</span>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
+
+      
 
       {/* Recent Users */}
       <div className="bg-white rounded-xl shadow-lg">

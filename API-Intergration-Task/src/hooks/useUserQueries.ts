@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User } from '@/components/data-table/columns';
 import { userApi } from '@/apis/user';
+import { toast } from 'sonner';
 
 // Query keys
 export const userKeys = {
@@ -26,6 +27,9 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: userApi.createUser,
     onSuccess: (newUser) => {
+      // Show success message
+      toast.success('User created successfully!');
+      
       // Optimistically update the cache - add to top of list
       queryClient.setQueryData<User[]>(userKeys.lists(), (old) => {
         if (!old) return [newUser];
@@ -34,6 +38,11 @@ export function useCreateUser() {
       
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+    onError: (error: any) => {
+      console.error('Error creating user:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create user';
+      toast.error(`Error creating user: ${errorMessage}`);
     },
   });
 }
@@ -44,6 +53,9 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: userApi.updateUser,
     onSuccess: (updatedUser) => {
+      // Show success message
+      toast.success('User updated successfully!');
+      
       // Optimistically update the cache
       queryClient.setQueryData<User[]>(userKeys.lists(), (old) => {
         if (!old) return [updatedUser];
@@ -55,6 +67,11 @@ export function useUpdateUser() {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     },
+    onError: (error: any) => {
+      console.error('Error updating user:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update user';
+      toast.error(`Error updating user: ${errorMessage}`);
+    },
   });
 }
 
@@ -64,6 +81,9 @@ export function useDeleteUser() {
   return useMutation({
     mutationFn: userApi.deleteUser,
     onSuccess: (_, deletedId) => {
+      // Show success message
+      toast.success('User deleted successfully!');
+      
       // Optimistically update the cache
       queryClient.setQueryData<User[]>(userKeys.lists(), (old) => {
         if (!old) return [];
@@ -72,6 +92,11 @@ export function useDeleteUser() {
       
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting user:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete user';
+      toast.error(`Error deleting user: ${errorMessage}`);
     },
   });
 }

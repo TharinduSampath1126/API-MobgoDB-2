@@ -95,7 +95,7 @@ export default function UsersTable({ data }: Props) {
         />
       </div>
 
-      <SuccessAlert open={successOpen} onOpenChange={setSuccessOpen} />
+      {/* <SuccessAlert open={successOpen} onOpenChange={setSuccessOpen} /> */}
 
       <DataTable
         columns={productsData ? productColumns : columns as any}

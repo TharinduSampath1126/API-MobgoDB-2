@@ -22,5 +22,21 @@ app.get("/", (req, res) => {
   res.send("Server is running");
 });
 
+// 404 handler for API routes - must come after all API route definitions
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+    error: "Not Found",
+    availableEndpoints: {
+      "GET /api/users": "Get all users",
+      "GET /api/users/:id": "Get user by ID", 
+      "POST /api/users/add": "Create new user",
+      "PUT /api/users/:id": "Update user by ID",
+      "DELETE /api/users/:id": "Delete user by ID"
+    }
+  });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

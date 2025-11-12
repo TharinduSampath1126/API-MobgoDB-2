@@ -10,6 +10,7 @@ import { UserForm } from '@/components/form/add-post-form';
 import TableColumnsDropdown from '@/components/data-table/table-columns-dropdown';
 import SuccessAlert from '@/components/customUi/success-alert';
 import UsersTable from './tables/table-columns/users-table';
+import { toast } from 'sonner';
 
 type Props = {
   data?: User[];
@@ -23,6 +24,15 @@ export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
   
   const [addOpen, setAddOpen] = React.useState(false);
   const [successOpen, setSuccessOpen] = React.useState(false);
+
+  // Handle query errors with toast notifications
+  React.useEffect(() => {
+    if (error) {
+      console.error('Users query error:', error);
+      const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || 'Failed to fetch users';
+      toast.error(`Error loading users: ${errorMessage}`);
+    }
+  }, [error]);
 
   const [table, setTable] = React.useState<any | null>(null);
   // pagination state (data-driven)
@@ -121,7 +131,7 @@ export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
         }}
       />
 
-      <SuccessAlert open={successOpen} onOpenChange={setSuccessOpen} />
+      {/* <SuccessAlert open={successOpen} onOpenChange={setSuccessOpen} /> */}
 
       <UsersTable
         data={allUsers}
