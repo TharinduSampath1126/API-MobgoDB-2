@@ -1,6 +1,5 @@
-import { userStorage } from '../utils/userStorage';
+const API_BASE_URL = 'http://localhost:5000/api';
 
-// JWT Authentication Service
 export interface AuthResponse {
   token: string;
   user: {
@@ -23,131 +22,103 @@ export interface RegisterCredentials {
   confirmPassword: string;
 }
 
-// Simulate API calls - replace with actual backend endpoints
 class AuthService {
-  // Store token in localStorage
   setToken(token: string): void {
     localStorage.setItem('auth_token', token);
   }
 
-  // Get token from localStorage
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }
 
-  // Remove token from localStorage
   removeToken(): void {
     localStorage.removeItem('auth_token');
   }
 
-  // Check if user is authenticated
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token) return false;
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp > Date.now() / 1000;
+    } catch {
+      return false;
+    }
   }
 
-  // Login user
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // First try to verify with local user storage
-    const storedUser = userStorage.verifyUser(credentials.email, credentials.password);
-
-    if (storedUser) {
-      const fakeToken = this.createFakeToken({ name: storedUser.name, email: storedUser.email });
-      const authResponse: AuthResponse = {
-        token: fakeToken,
-        user: {
-          id: Date.now().toString(),
-          name: storedUser.name,
-          email: storedUser.email,
-        },
-      };
-
-      this.setToken(fakeToken);
-      return authResponse;
-    }
-
-    // If not found locally, try DummyJSON API for demonstration
+  getUserFromToken(): { id: string; name: string; email: string } | null {
+    const token = this.getToken();
+    if (!token) return null;
+    
     try {
-      const response = await fetch('https://dummyjson.com/auth/login', {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        id: payload.userId,
+        name: payload.name,
+        email: payload.email
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: 'kminchelle', // DummyJSON demo user
-          password: '0lelplR', // DummyJSON demo password
-          expiresInMins: 30,
+          email: credentials.email,
+          password: credentials.password
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const authResponse: AuthResponse = {
-          token: data.token,
-          user: {
-            id: data.id?.toString() ?? Date.now().toString(),
-            name: credentials.name ?? data.firstName ?? 'User',
-            email: credentials.email ?? data.email ?? 'unknown@example.com',
-          },
-        };
+      const data = await response.json();
 
-        this.setToken(authResponse.token);
-        return authResponse;
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
       }
-    } catch (err) {
-      // ignore and fallthrough to error below
-      console.warn('DummyJSON login failed (demo):', err);
-    }
 
-    throw new Error('Invalid email or password');
+      this.setToken(data.token);
+      return {
+        token: data.token,
+        user: data.user
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error');
+    }
   }
 
-  // Register user - store locally for demo usage
   async register(credentials: RegisterCredentials): Promise<{ success: boolean; message: string }> {
-    if (credentials.password !== credentials.confirmPassword) {
-      throw new Error('Passwords do not match');
-    }
-
     try {
-      userStorage.addUser({
-        name: credentials.name,
-        email: credentials.email,
-        password: credentials.password,
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
 
       return {
         success: true,
-        message: 'Registration successful! Please login with your credentials.',
+        message: data.message
       };
     } catch (error: any) {
-      throw new Error(error?.message || 'Registration failed');
+      throw new Error(error.message || 'Network error');
     }
   }
 
-  // Logout user
   logout(): void {
     this.removeToken();
-  }
-
-  // Create fake JWT token for demo purposes
-  private createFakeToken(user: { name: string; email: string; password?: string }): string {
-    const header = {
-      alg: 'HS256',
-      typ: 'JWT',
-    };
-
-    const payload = {
-      sub: Date.now().toString(),
-      name: user.name,
-      email: user.email,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // 24 hours
-    };
-
-    const encodedHeader = btoa(JSON.stringify(header));
-    const encodedPayload = btoa(JSON.stringify(payload));
-    const signature = 'fake-signature-for-demo';
-
-    return `${encodedHeader}.${encodedPayload}.${signature}`;
   }
 }
 

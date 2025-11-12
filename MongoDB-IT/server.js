@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import userRoutes from "./routes/users.js";
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 const app = express();
@@ -16,6 +17,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
 
 // Example route
 app.get("/", (req, res) => {
@@ -33,7 +35,9 @@ app.use("/api", (req, res) => {
       "GET /api/users/:id": "Get user by ID", 
       "POST /api/users/add": "Create new user",
       "PUT /api/users/:id": "Update user by ID",
-      "DELETE /api/users/:id": "Delete user by ID"
+      "DELETE /api/users/:id": "Delete user by ID",
+      "POST /api/auth/register": "Register new user",
+      "POST /api/auth/login": "Login user"
     }
   });
 });

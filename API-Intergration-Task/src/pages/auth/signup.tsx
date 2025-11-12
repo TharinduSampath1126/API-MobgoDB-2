@@ -115,9 +115,9 @@ function signup({ onRegister }: SignupProps) {
         toast.error(result.message || 'Registration failed. Please try again.');
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Register error:', error);
-      toast.error('Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
