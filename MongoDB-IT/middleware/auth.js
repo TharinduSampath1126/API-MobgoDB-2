@@ -17,7 +17,7 @@ export const generateToken = (user) => {
 // JWT Token verification middleware
 export const verifyToken = async (req, res, next) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    const token = req.cookies.auth_token;
     
     if (!token) {
       return res.status(401).json({
@@ -56,7 +56,7 @@ export const verifyToken = async (req, res, next) => {
 // Refresh token
 export const refreshToken = async (req, res) => {
   try {
-    const { token } = req.body;
+    const token = req.cookies.auth_token;
     
     if (!token) {
       return res.status(401).json({
@@ -77,9 +77,16 @@ export const refreshToken = async (req, res) => {
 
     const newToken = generateToken(user);
     
+    // Set new token as httpOnly cookie
+    res.cookie('auth_token', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+    
     res.json({
       success: true,
-      token: newToken,
       user: {
         id: user._id,
         name: user.name,

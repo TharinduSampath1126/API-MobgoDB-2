@@ -110,12 +110,19 @@ router.post('/login', async (req, res) => {
     // Generate JWT token
     const token = generateToken(user);
     
+    // Set token as httpOnly cookie
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+    
     console.log('User logged in successfully:', user.name);
     
     res.json({
       success: true,
       message: 'Login successful',
-      token,
       user: {
         id: user._id,
         name: user.name,
@@ -130,6 +137,15 @@ router.post('/login', async (req, res) => {
       message: 'Server error during login'
     });
   }
+});
+
+// Logout user
+router.post('/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 });
 
 export default router;

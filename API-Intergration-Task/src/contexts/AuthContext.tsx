@@ -9,11 +9,10 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<{ success: boolean; message: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -33,26 +32,18 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is already authenticated on app start
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
-        const savedToken = authService.getToken();
-        if (savedToken && authService.isAuthenticated()) {
-          const userData = authService.getUserFromToken();
-          if (userData) {
-            setUser(userData);
-            setToken(savedToken);
-          } else {
-            authService.removeToken();
-          }
+        const userData = await authService.getUserFromToken();
+        if (userData) {
+          setUser(userData);
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
-        authService.removeToken();
+        // Silently handle auth errors - 401 is expected when not logged in
       } finally {
         setLoading(false);
       }
@@ -67,7 +58,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response: AuthResponse = await authService.login(credentials);
       
       setUser(response.user);
-      setToken(response.token);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -90,20 +80,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = (): void => {
-    authService.logout();
-    setUser(null);
-    setToken(null);
+  const logout = async (): Promise<void> => {
+    try {
+      await authService.logout();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      setUser(null);
+    }
   };
 
   const value: AuthContextType = {
     user,
-    token,
     loading,
     login,
     register,
     logout,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
   };
 
   return (

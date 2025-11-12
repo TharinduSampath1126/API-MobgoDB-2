@@ -1,7 +1,6 @@
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface AuthResponse {
-  token: string;
   user: {
     id: string;
     name: string;
@@ -23,42 +22,36 @@ export interface RegisterCredentials {
 }
 
 class AuthService {
-  setToken(token: string): void {
-    localStorage.setItem('auth_token', token);
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem('auth_token');
-  }
-
-  removeToken(): void {
-    localStorage.removeItem('auth_token');
-  }
-
-  isAuthenticated(): boolean {
-    const token = this.getToken();
-    if (!token) return false;
-    
+  // Check if user is authenticated by calling backend
+  async isAuthenticated(): Promise<boolean> {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp > Date.now() / 1000;
+      const response = await fetch(`${API_BASE_URL}/protected/profile`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      return response.ok;
     } catch {
       return false;
     }
   }
 
-  getUserFromToken(): { id: string; name: string; email: string } | null {
-    const token = this.getToken();
-    if (!token) return null;
-    
+  // Get user data from backend
+  async getUserFromToken(): Promise<{ id: string; name: string; email: string } | null> {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return {
-        id: payload.userId,
-        name: payload.name,
-        email: payload.email
-      };
-    } catch {
+      const response = await fetch(`${API_BASE_URL}/protected/profile`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        return data.user;
+      }
+      
+      // 401 is expected when not authenticated - return null silently
+      return null;
+    } catch (error) {
+      // Silently handle network errors during auth check
       return null;
     }
   }
@@ -67,6 +60,7 @@ class AuthService {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -82,9 +76,7 @@ class AuthService {
         throw new Error(data.message || 'Login failed');
       }
 
-      this.setToken(data.token);
       return {
-        token: data.token,
         user: data.user
       };
     } catch (error: any) {
@@ -96,6 +88,7 @@ class AuthService {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -119,17 +112,12 @@ class AuthService {
 
   async refreshToken(): Promise<AuthResponse> {
     try {
-      const currentToken = this.getToken();
-      if (!currentToken) {
-        throw new Error('No token available');
-      }
-
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: currentToken }),
+        }
       });
 
       const data = await response.json();
@@ -138,9 +126,7 @@ class AuthService {
         throw new Error(data.message || 'Token refresh failed');
       }
 
-      this.setToken(data.token);
       return {
-        token: data.token,
         user: data.user
       };
     } catch (error: any) {
@@ -150,15 +136,10 @@ class AuthService {
 
   async getProfile(): Promise<any> {
     try {
-      const token = this.getToken();
-      if (!token) {
-        throw new Error('No token available');
-      }
-
       const response = await fetch(`${API_BASE_URL}/protected/profile`, {
         method: 'GET',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -175,21 +156,23 @@ class AuthService {
     }
   }
 
-  logout(): void {
-    this.removeToken();
+  async logout(): Promise<void> {
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }
 
   // Helper method to make authenticated requests
   async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<any> {
-    const token = this.getToken();
-    if (!token) {
-      throw new Error('No authentication token');
-    }
-
     const response = await fetch(`${API_BASE_URL}${url}`, {
       ...options,
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...options.headers,
       },
