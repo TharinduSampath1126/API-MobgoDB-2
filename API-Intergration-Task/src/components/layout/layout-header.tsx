@@ -1,6 +1,6 @@
 import { Button } from '../ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useUserStore } from '@/store/userStore';
+import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User, ChevronDown } from 'lucide-react';
 import {
   DropdownMenu,
@@ -13,16 +13,16 @@ import {
 
 export function LayoutHeader() {
   const navigate = useNavigate();
-  const { getFirstName, clearLoggedInUser, loggedInUser } = useUserStore();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     console.log('Logging out...');
     // Clear user data and navigate to login
-    clearLoggedInUser();
+    logout();
     navigate('/');
   };
 
-  const firstName = getFirstName();
+  const firstName = user?.name?.split(' ')[0] || 'User';
 
   return (
     <div className="flex h-20 items-center justify-between gap-2 border-b px-4">
@@ -44,9 +44,9 @@ export function LayoutHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{loggedInUser?.name || 'User'}</p>
+                <p className="text-sm font-medium leading-none">{user?.name || 'User'}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {loggedInUser?.email || 'user@example.com'}
+                  {user?.email || 'user@example.com'}
                 </p>
               </div>
             </DropdownMenuLabel>

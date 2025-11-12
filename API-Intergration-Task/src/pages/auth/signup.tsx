@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 import { z } from 'zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 // Zod schema for registration validation
 const registerSchema = z.object({
@@ -43,6 +45,7 @@ interface SignupProps {
 
 function signup({ onRegister }: SignupProps) {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formData, setFormData] = useState<RegisterData>({
     name: '',
     email: '',
@@ -94,12 +97,27 @@ function signup({ onRegister }: SignupProps) {
         await onRegister(formData);
       }
       
-      // Navigate to login page after successful registration
-      navigate('/');
+      // Use JWT authentication for registration
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
+      
+      if (result.success) {
+        // Show success message
+        toast.success('Account created successfully! Please login with your credentials.');
+        
+        // Navigate to login after successful registration
+        navigate('/');
+      } else {
+        toast.error(result.message || 'Registration failed. Please try again.');
+      }
       
     } catch (error) {
       console.error('Register error:', error);
-      alert('Registration failed. Please try again.');
+      toast.error('Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

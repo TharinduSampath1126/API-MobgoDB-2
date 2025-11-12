@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, User } from 'lucide-react';
 import { z } from 'zod';
-import { useUserStore } from '@/store/userStore';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 // Zod schema for login validation
 const loginSchema = z.object({
@@ -35,7 +36,7 @@ interface LogingProps {
 
 function loging({ onLogin }: LogingProps) {
   const navigate = useNavigate();
-  const setLoggedInUser = useUserStore((state) => state.setLoggedInUser);
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginData>({
     name: '',
     email: '',
@@ -87,18 +88,22 @@ function loging({ onLogin }: LogingProps) {
         await onLogin(formData);
       }
       
-      // Store user information
-      setLoggedInUser({
+      // Use JWT authentication
+      await login({
         name: formData.name,
         email: formData.email,
+        password: formData.password,
       });
+      
+      // Show success message
+      toast.success('Login successful!');
       
       // Navigate to dashboard after successful login
       navigate('/dashboard');
       
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      toast.error('Login failed. Please check your credentials and try again.');
     } finally {
       setIsLoading(false);
     }
