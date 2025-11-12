@@ -117,8 +117,91 @@ class AuthService {
     }
   }
 
+  async refreshToken(): Promise<AuthResponse> {
+    try {
+      const currentToken = this.getToken();
+      if (!currentToken) {
+        throw new Error('No token available');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: currentToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Token refresh failed');
+      }
+
+      this.setToken(data.token);
+      return {
+        token: data.token,
+        user: data.user
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error');
+    }
+  }
+
+  async getProfile(): Promise<any> {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        throw new Error('No token available');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/protected/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to get profile');
+      }
+
+      return data.user;
+    } catch (error: any) {
+      throw new Error(error.message || 'Network error');
+    }
+  }
+
   logout(): void {
     this.removeToken();
+  }
+
+  // Helper method to make authenticated requests
+  async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<any> {
+    const token = this.getToken();
+    if (!token) {
+      throw new Error('No authentication token');
+    }
+
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Request failed');
+    }
+
+    return data;
   }
 }
 

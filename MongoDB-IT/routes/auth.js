@@ -1,6 +1,6 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import AuthUser from '../models/AuthUser.js';
+import { generateToken, refreshToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -71,6 +71,9 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Refresh token
+router.post('/refresh', refreshToken);
+
 // Login user
 router.post('/login', async (req, res) => {
   try {
@@ -105,15 +108,7 @@ router.post('/login', async (req, res) => {
     }
     
     // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user._id,
-        email: user.email,
-        name: user.name
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    const token = generateToken(user);
     
     console.log('User logged in successfully:', user.name);
     
