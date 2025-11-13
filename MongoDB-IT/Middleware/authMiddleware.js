@@ -10,7 +10,7 @@ export const generateToken = (user) => {
       name: user.name
     },
     process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '30s' }
+    { expiresIn: '1h' }
   );
 };
 
@@ -82,7 +82,7 @@ export const refreshToken = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 30 * 1000 // 24 hours
+      maxAge: 60 * 60 * 1000 // 1 hour
     });
     
     res.json({

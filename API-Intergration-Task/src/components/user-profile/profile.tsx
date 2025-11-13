@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { authService } from '@/services/authService';
 import { Button } from '@/components/ui/button';
@@ -24,30 +23,26 @@ interface UserProfileData {
 }
 
 const UserProfile: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(Date.now());
   const [editForm, setEditForm] = useState({
     name: '',
   });
 
-  // Handle token expiration
-  const handleTokenExpiration = async (errorMessage: string) => {
-    if (errorMessage.includes('Token expired') || errorMessage.includes('expired')) {
-      console.log('Token expired, logging out...');
-      try {
-        await logout();
-      } catch (logoutError) {
-        console.error('Logout error:', logoutError);
-      }
-      navigate('/', { replace: true });
-    }
-  };
+  // Update current time every second for real-time token expiration
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch profile data on component mount
   useEffect(() => {
@@ -61,32 +56,41 @@ const UserProfile: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const profile = await authService.getProfile();
-      setProfileData(profile);
-      setEditForm({
-        name: profile.name || '',
-      });
+      // Get token data from localStorage
+      const tokenData = authService.getTokenData();
+      
+      if (tokenData && tokenData.userId && tokenData.name && tokenData.email) {
+        // Use data from decoded token
+        const profile = {
+          id: tokenData.userId,
+          name: tokenData.name,
+          email: tokenData.email,
+          createdAt: new Date(tokenData.iat * 1000).toISOString() // Convert timestamp to date
+        };
+        
+        setProfileData(profile);
+        setEditForm({
+          name: profile.name || '',
+        });
+      } else {
+        // Fallback to context user data if token data is not available
+        if (user) {
+          setProfileData({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          });
+          setEditForm({
+            name: user.name || '',
+          });
+        } else {
+          throw new Error('No user data available');
+        }
+      }
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to load profile';
-      
-      // Check for token expiration
-      if (errorMessage.includes('Token expired') || errorMessage.includes('expired')) {
-        await handleTokenExpiration(errorMessage);
-        return;
-      }
-      
       setError(errorMessage);
-      // Fallback to context user data if API call fails
-      if (user) {
-        setProfileData({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        });
-        setEditForm({
-          name: user.name || '',
-        });
-      }
+      console.error('Profile loading error:', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -118,35 +122,27 @@ const UserProfile: React.FC = () => {
         return;
       }
 
-      // Make API call to update profile
-      const response = await authService.makeAuthenticatedRequest('/protected/profile', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name: editForm.name.trim(),
-        }),
-      });
-
-      // Update local state with response
+      // Update local state only (since we're using token-based data)
       setProfileData(prev => prev ? {
         ...prev,
-        name: response.user.name,
+        name: editForm.name.trim(),
       } : null);
       
+      // Update token data in localStorage with new name
+      const tokenData = authService.getTokenData();
+      if (tokenData) {
+        tokenData.name = editForm.name.trim();
+        authService.setTokenData(tokenData);
+      }
+      
       setIsEditing(false);
-      setSuccessMessage('Profile updated successfully!');
+      setSuccessMessage('Profile updated successfully! (Local changes only)');
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
       
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to update profile';
-      
-      // Check for token expiration
-      if (errorMessage.includes('Token expired') || errorMessage.includes('expired')) {
-        await handleTokenExpiration(errorMessage);
-        return;
-      }
-      
       setError(errorMessage);
     } finally {
       setSaveLoading(false);
@@ -243,6 +239,9 @@ const UserProfile: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-800 flex items-center space-x-2">
             <User className="w-6 h-6 text-blue-600" />
             <span>Profile Information</span>
+            <span className="text-sm text-green-600 bg-green-100 px-2 py-1 rounded-full ml-2">
+              📱 From JWT Token
+            </span>
           </h2>
           
           {!isEditing ? (
@@ -337,6 +336,86 @@ const UserProfile: React.FC = () => {
               <p className="text-gray-900">{formatDate(profileData?.createdAt)}</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* JWT Token Information Card */}
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center space-x-2">
+          <Shield className="w-6 h-6 text-green-600" />
+          <span>JWT Token Information</span>
+        </h2>
+        
+        <div className="space-y-4">
+          {(() => {
+            const tokenData = authService.getTokenData();
+            if (tokenData) {
+              return (
+                <div className="bg-gray-50 rounded-lg p-4 border">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">User ID (from token)</label>
+                      <div className="p-2 bg-white rounded border text-sm font-mono">
+                        {tokenData.userId}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Email (from token)</label>
+                      <div className="p-2 bg-white rounded border text-sm">
+                        {tokenData.email}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Name (from token)</label>
+                      <div className="p-2 bg-white rounded border text-sm">
+                        {tokenData.name}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Token Issued At</label>
+                      <div className="p-2 bg-white rounded border text-sm">
+                        {new Date(tokenData.iat * 1000).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Token Expires At</label>
+                      <div className="p-2 bg-white rounded border text-sm">
+                        {new Date(tokenData.exp * 1000).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">Token Status</label>
+                      <div className={`p-2 rounded border text-sm font-medium ${
+                        tokenData.exp > currentTime / 1000 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {tokenData.exp > currentTime / 1000 ? '✅ Valid' : '❌ Expired'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t">
+                    <label className="text-sm font-medium text-gray-700">Time Remaining</label>
+                    <div className="p-2 bg-white rounded border text-sm font-mono">
+                      {(() => {
+                        const remaining = Math.max(0, tokenData.exp - currentTime / 1000);
+                        const minutes = Math.floor(remaining / 60);
+                        const seconds = Math.floor(remaining % 60);
+                        return `${minutes}m ${seconds}s`;
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                  <span className="text-red-700">No JWT token data found</span>
+                </div>
+              );
+            }
+          })()}
         </div>
       </div>
 
