@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authService, AuthResponse, LoginCredentials, RegisterCredentials } from '../services/authService';
 
 interface User {
@@ -36,6 +37,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [tokenData, setTokenData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Auto-logout function
+  const performAutoLogout = useCallback(async () => {
+    console.log('Token expired - performing auto logout');
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Auto logout error:', error);
+    } finally {
+      setUser(null);
+      setTokenData(null);
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
+
+  // Check token expiration
+  const checkTokenExpiration = useCallback(() => {
+    const currentTokenData = authService.getTokenData();
+    if (currentTokenData && user) {
+      const currentTime = Date.now() / 1000;
+      const tokenExp = currentTokenData.exp;
+      
+      // If token is expired, auto logout
+      if (tokenExp && currentTime >= tokenExp) {
+        performAutoLogout();
+        return true; // Token expired
+      }
+    }
+    return false; // Token valid or no token
+  }, [user, performAutoLogout]);
 
   useEffect(() => {
     // Check if user is already authenticated on app start
@@ -48,9 +80,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(userData);
             setTokenData(currentTokenData);
           }
+        } else if (currentTokenData) {
+          // Token exists but expired, clear it
+          authService.removeTokenData();
         }
       } catch (error) {
         // Silently handle auth errors
+        console.error('Auth initialization error:', error);
       } finally {
         setLoading(false);
       }
@@ -58,6 +94,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
   }, []);
+
+  // Token expiration monitoring
+  useEffect(() => {
+    if (!user || !tokenData) return;
+
+    // Check token expiration every 30 seconds
+    const tokenCheckInterval = setInterval(() => {
+      checkTokenExpiration();
+    }, 30 * 1000);
+
+    // Also check on window focus
+    const handleWindowFocus = () => {
+      checkTokenExpiration();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
+    // Cleanup
+    return () => {
+      clearInterval(tokenCheckInterval);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [user, tokenData, checkTokenExpiration]);
 
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {

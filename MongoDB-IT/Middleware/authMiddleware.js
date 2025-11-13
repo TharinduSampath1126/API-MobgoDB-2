@@ -5,12 +5,12 @@ import AuthUser from '../models/AuthUserModels.js';
 export const generateToken = (user) => {
   return jwt.sign(
     {
-      userId: user._id,
+      // userId: user._id,
       email: user.email,
       name: user.name
     },
     process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '24h' }
+    { expiresIn: '10s' }
   );
 };
 
@@ -89,7 +89,7 @@ export const refreshToken = async (req, res) => {
       success: true,
       token: newToken, // Send new token for frontend decoding
       user: {
-        id: user._id,
+        // id: user._id,
         name: user.name,
         email: user.email
       }

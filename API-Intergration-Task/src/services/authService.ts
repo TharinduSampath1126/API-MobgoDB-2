@@ -165,6 +165,12 @@ class AuthService {
 
   async getProfile(): Promise<any> {
     try {
+      // Check token expiration before making request
+      if (!this.isAuthenticated()) {
+        this.removeTokenData();
+        throw new Error('Token expired. Please login again.');
+      }
+
       const response = await fetch(`${API_BASE_URL}/protected/profile`, {
         method: 'GET',
         credentials: 'include',
@@ -176,6 +182,14 @@ class AuthService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Check for token expiration errors
+        if (response.status === 401 && 
+            (data.message?.includes('expired') || 
+             data.message?.includes('Token expired') ||
+             data.message?.includes('Invalid token'))) {
+          this.removeTokenData();
+          throw new Error('Token expired. Please login again.');
+        }
         throw new Error(data.message || 'Failed to get profile');
       }
 
@@ -202,6 +216,12 @@ class AuthService {
 
   // Helper method to make authenticated requests
   async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<any> {
+    // Check token expiration before making request
+    if (!this.isAuthenticated()) {
+      this.removeTokenData();
+      throw new Error('Token expired. Please login again.');
+    }
+
     const response = await fetch(`${API_BASE_URL}${url}`, {
       ...options,
       credentials: 'include',
@@ -214,6 +234,14 @@ class AuthService {
     const data = await response.json();
 
     if (!response.ok) {
+      // Check for token expiration errors
+      if (response.status === 401 && 
+          (data.message?.includes('expired') || 
+           data.message?.includes('Token expired') ||
+           data.message?.includes('Invalid token'))) {
+        this.removeTokenData();
+        throw new Error('Token expired. Please login again.');
+      }
       throw new Error(data.message || 'Request failed');
     }
 

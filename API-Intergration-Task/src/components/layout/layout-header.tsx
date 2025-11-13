@@ -22,6 +22,10 @@ export function LayoutHeader() {
     navigate('/');
   };
 
+  const handleProfile = () => {
+    navigate('/profile');
+  };
+
   const firstName = user?.name?.split(' ')[0] || 'User';
 
   return (
@@ -51,6 +55,10 @@ export function LayoutHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleProfile} className="text-black focus:text-blue-600 cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>

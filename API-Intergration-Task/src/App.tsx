@@ -8,6 +8,7 @@ import Layout from './components/layout/layout';
 import NotFound from './pages/NotFound/NotFound';
 import LoginPage from './pages/auth/loging';
 import SignupPage from './pages/auth/signup';
+import UserProfile from './components/user-profile/profile';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -93,6 +94,16 @@ function App() {
                       <br />
                       <NewlyAddedUsersTable />
                     </div>
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UserProfile />
                   </Layout>
                 </ProtectedRoute>
               }
