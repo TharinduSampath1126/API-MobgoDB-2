@@ -9,9 +9,10 @@ export interface UserFormProps {
   initialData?: Partial<Record<string, any>>;
   onSubmit: (data: any) => Promise<void> | void;
   isEdit?: boolean;
+  nextId?: number;
 }
 
-export function UserForm({ open, onOpenChange, initialData, onSubmit, isEdit }: UserFormProps) {
+export function UserForm({ open, onOpenChange, initialData, onSubmit, isEdit, nextId }: UserFormProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-md'>
@@ -26,6 +27,7 @@ export function UserForm({ open, onOpenChange, initialData, onSubmit, isEdit }: 
         <CustomForm
           initialData={initialData as any}
           isEdit={isEdit}
+          nextId={nextId}
           onSubmit={onSubmit}
           onOpenChange={onOpenChange}
         />

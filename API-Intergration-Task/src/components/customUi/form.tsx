@@ -10,17 +10,23 @@ import { UserSchema, User } from '@/components/data-table/columns';
 type Props = {
 	initialData?: User;
 	isEdit?: boolean;
+	nextId?: number;
 	onSubmit: (data: User) => Promise<void> | void;
 	onOpenChange?: (open: boolean) => void;
 };
 
-export function CustomForm({ initialData, isEdit, onSubmit, onOpenChange }: Props) {
+export function CustomForm({ initialData, isEdit, nextId, onSubmit, onOpenChange }: Props) {
 	const [birthDate, setBirthDate] = React.useState<Date | undefined>(
 		initialData ? (initialData.birthDate ? new Date(initialData.birthDate) : undefined) : undefined
 	);
 	const [age, setAge] = React.useState<number | undefined>(initialData?.age);
 	const [phone, setPhone] = React.useState<string>(initialData?.phone ?? '');
 	const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+	// Auto-generated ID for new users
+	const autoId = React.useMemo(() => {
+		return isEdit ? initialData?.id : (nextId || 1);
+	}, [isEdit, initialData?.id, nextId]);
 
 	// helper to clear a specific field error when the field changes
 	const clearFieldError = (field: string) => {
@@ -33,31 +39,36 @@ export function CustomForm({ initialData, isEdit, onSubmit, onOpenChange }: Prop
 
 	return (
 		<form
-			onSubmit={async (e) => {
-				e.preventDefault();
-				const formData = new FormData(e.target as HTMLFormElement);
-				const birthDateStr = birthDate ? format(birthDate, 'yyyy-MM-dd') : '';
+				onSubmit={async (e) => {
+					e.preventDefault();
+					const formData = new FormData(e.target as HTMLFormElement);
+					const birthDateStr = birthDate ? format(birthDate, 'yyyy-MM-dd') : '';
 
-				const rawId = Number(formData.get('id'));
-				// Generate a random ID between 1 and 10000 if no ID provided
-				const finalId = !rawId || Number.isNaN(rawId) ? (initialData?.id ?? Math.floor(Math.random() * 10000) + 1) : rawId;
+					// Use auto-generated ID for new users, form ID for edits
+					const rawId = Number(formData.get('id'));
+					const finalId = isEdit 
+						? (rawId || initialData?.id || 1)
+						: autoId;
 
-				const rawData = {
-					id: finalId,
-					firstName: (formData.get('firstName') as string) ?? '',
-					lastName: (formData.get('lastName') as string) ?? '',
-					age: age || 0,
-					email: (formData.get('email') as string) ?? '',
-					phone: phone,
-					birthDate: birthDateStr,
-				} as unknown as User;
+					const rawData = {
+						id: finalId,
+						firstName: (formData.get('firstName') as string) ?? '',
+						lastName: (formData.get('lastName') as string) ?? '',
+						age: age || 0,
+						email: (formData.get('email') as string) ?? '',
+						phone: phone,
+						birthDate: birthDateStr,
+					} as unknown as User;
 
-				console.log('Form data being submitted:', rawData);
+					console.log('Form data being submitted:', rawData);
+					console.log('Auto-generated ID:', autoId, 'Final ID used:', finalId);
+					console.log('Is editing?', isEdit, 'Initial data ID:', initialData?.id);
 
 				try {
 					const validatedData = UserSchema.parse(rawData);
-					console.log('Validated data:', validatedData);
+					console.log('Validated data to be saved:', validatedData);
 					await Promise.resolve(onSubmit(validatedData));
+					console.log('User successfully saved with ID:', validatedData.id);
 					(e.target as HTMLFormElement).reset();
 					setBirthDate(undefined);
 					setAge(undefined);
@@ -78,16 +89,28 @@ export function CustomForm({ initialData, isEdit, onSubmit, onOpenChange }: Prop
 		>
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div className="sm:col-span-2">
-					<label className="mb-1 block text-sm font-medium">ID</label>
+					<label className="mb-1 block text-sm font-medium">
+						ID {!isEdit && <span className="text-green-600 font-semibold">(Auto-generated: {autoId})</span>}
+					</label>
+					{!isEdit && (
+						<div className="mb-2 p-3 bg-green-50 border border-green-200 rounded-md">
+							<div className="flex items-center space-x-2">
+								<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+								<span className="text-sm text-green-700">
+									Next available ID: <span className="font-bold text-green-800">{autoId}</span>
+								</span>
+							</div>
+						</div>
+					)}
 					<Input
 						name="id"
 						type="number"
-						placeholder="Enter ID"
+						placeholder="Auto-generated ID"
 						error={errors.id}
 						onChange={() => clearFieldError('id')}
-						defaultValue={initialData?.id}
-						disabled={isEdit}
-						className={isEdit ? 'bg-gray-50' : ''}
+						value={autoId}
+						readOnly={!isEdit}
+						className={!isEdit ? 'bg-gray-50 text-gray-600 cursor-not-allowed' : ''}
 					/>
 					
 				</div>

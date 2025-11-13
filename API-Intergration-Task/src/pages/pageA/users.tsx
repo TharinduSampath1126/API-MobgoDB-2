@@ -54,12 +54,21 @@ export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
     if (onAddData) return onAddData(userData);
     
     try {
+      console.log('Sending user data to backend:', userData);
       // Save to backend via React Query
       const newUser = await createUserMutation.mutateAsync(userData);
+      console.log('User saved successfully to database:', newUser);
       // Don't add to local store - React Query will handle cache updates
       return newUser;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create user:', error);
+      
+      // Handle duplicate ID error specifically
+      if (error?.response?.data?.field === 'id') {
+        console.error('Duplicate ID detected, this should be handled by auto-generation');
+        toast.error(`ID ${error.response.data.value} is already in use. Please try again.`);
+      }
+      
       throw error; // Let the form handle the error
     }
   };
@@ -81,6 +90,29 @@ export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
     // If no backend data, show local only
     return local;
   }, [data, backendUsers, newPosts]);
+
+  // Calculate the next available ID with better checking
+  const getNextId = React.useCallback(() => {
+    if (!allUsers || allUsers.length === 0) return 1;
+    
+    // Get all existing IDs and sort them
+    const existingIds = allUsers
+      .map(user => user.id || 0)
+      .filter(id => id > 0)
+      .sort((a, b) => a - b);
+    
+    if (existingIds.length === 0) return 1;
+    
+    // Find the next available ID (handles gaps in sequence)
+    for (let i = 1; i <= existingIds[existingIds.length - 1] + 1; i++) {
+      if (!existingIds.includes(i)) {
+        return i;
+      }
+    }
+    
+    // Fallback: return max + 1
+    return Math.max(...existingIds) + 1;
+  }, [allUsers]);
 
   if (isLoading) {
     return <div className="p-4">Loading users...</div>;
@@ -119,6 +151,7 @@ export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
       <UserForm
         open={addOpen}
         onOpenChange={setAddOpen}
+        nextId={getNextId()}
         onSubmit={async (d) => {
           try {
             await handleAdd(d as User);

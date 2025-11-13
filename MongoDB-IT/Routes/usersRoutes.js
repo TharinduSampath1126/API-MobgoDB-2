@@ -76,7 +76,22 @@ router.post('/add', async (req, res) => {
     
     console.log('Create user request received:');
     console.log('Request body:', req.body);
-    console.log('Extracted data:', { id, firstName, lastName, age, email, phone, birthDate });
+    console.log('Auto-generated ID from frontend:', id);
+    
+    // Check if ID already exists
+    if (id) {
+      const existingUser = await User.findOne({ id: id });
+      if (existingUser) {
+        console.log('ID conflict detected:', id, 'already exists for user:', existingUser.firstName, existingUser.lastName);
+        return res.status(400).json({
+          success: false,
+          message: `ID ${id} is already in use. Please try with a different ID.`,
+          error: 'Duplicate ID',
+          field: 'id',
+          value: id
+        });
+      }
+    }
     
     // Validate required fields
     const missingFields = [];
@@ -108,7 +123,7 @@ router.post('/add', async (req, res) => {
     
     // Create new user
     const newUser = new User({
-      id, // Include the custom id field
+      id, // Use the auto-generated ID from frontend
       firstName,
       lastName,
       age,
@@ -117,14 +132,14 @@ router.post('/add', async (req, res) => {
       birthDate: new Date(birthDate)
     });
     
-    console.log('Attempting to save user to database...');
+    console.log('Attempting to save user to database with ID:', id);
     const savedUser = await newUser.save();
-    console.log('User saved successfully:', savedUser.firstName, savedUser.lastName);
+    console.log('✅ User saved successfully to database:', savedUser.firstName, savedUser.lastName, 'with ID:', savedUser.id);
     
     res.status(201).json({
       success: true,
-      message: 'User created successfully',
-      id: savedUser.id, // Use custom id field
+      message: `User created successfully with ID ${savedUser.id}`,
+      id: savedUser.id, // Confirm the saved ID
       firstName: savedUser.firstName,
       lastName: savedUser.lastName,
       age: savedUser.age,
