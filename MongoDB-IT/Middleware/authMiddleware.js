@@ -5,12 +5,12 @@ import AuthUser from '../models/AuthUserModels.js';
 export const generateToken = (user) => {
   return jwt.sign(
     {
-      // userId: user._id,
+      userId: user._id,
       email: user.email,
       name: user.name
     },
     process.env.JWT_SECRET || 'your-secret-key',
-    { expiresIn: '10s' }
+    { expiresIn: '30s' }
   );
 };
 
@@ -82,7 +82,7 @@ export const refreshToken = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 10 * 1000 // 24 hours
+      maxAge: 30 * 1000 // 24 hours
     });
     
     res.json({

@@ -28,30 +28,24 @@ export interface RegisterCredentials {
 }
 
 class AuthService {
-  // Store decoded token data in cookie
+  // Store decoded token data in local storage (since auth_token is httpOnly)
   setTokenData(tokenData: any): void {
-    document.cookie = `token_data=${JSON.stringify(tokenData)}; path=/; max-age=${24 * 60 * 60}; SameSite=Lax`;
+    localStorage.setItem('token_data', JSON.stringify(tokenData));
   }
 
-  // Get decoded token data from cookie
+  // Get decoded token data from local storage
   getTokenData(): any {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'token_data') {
-        try {
-          return JSON.parse(decodeURIComponent(value));
-        } catch {
-          return null;
-        }
-      }
+    try {
+      const tokenData = localStorage.getItem('token_data');
+      return tokenData ? JSON.parse(tokenData) : null;
+    } catch {
+      return null;
     }
-    return null;
   }
 
-  // Remove token data cookie
+  // Remove token data from local storage
   removeTokenData(): void {
-    document.cookie = 'token_data=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    localStorage.removeItem('token_data');
   }
 
   // Check if user is authenticated
