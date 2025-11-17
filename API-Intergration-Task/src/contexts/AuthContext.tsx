@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService, AuthResponse, LoginCredentials, RegisterCredentials } from '../services/authService';
+import { cookieManager } from '../utils/cookieManager';
 
 interface User {
   id: string;
@@ -95,19 +96,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Token expiration monitoring
+  // Token expiration and cookie monitoring
   useEffect(() => {
-    if (!user || !tokenData) return;
+    if (!user || !tokenData) {
+      // Stop cookie monitoring when not authenticated
+      cookieManager.stopCookieMonitoring();
+      return;
+    }
 
-    // Check token expiration every 30 seconds
+    // Re-enabled: Token expiration checking to handle backend token expiry
+    // Check every 2 minutes for better responsiveness to expired tokens
     const tokenCheckInterval = setInterval(() => {
       checkTokenExpiration();
-    }, 30 * 1000);
+    }, 2 * 60 * 1000);
 
     // Also check on window focus
     const handleWindowFocus = () => {
       checkTokenExpiration();
     };
+
+    // Start cookie monitoring for manual deletion
+    cookieManager.startCookieMonitoring(() => {
+      console.log('Cookie deleted manually - logging out');
+      performAutoLogout();
+    });
 
     window.addEventListener('focus', handleWindowFocus);
 
@@ -115,8 +127,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => {
       clearInterval(tokenCheckInterval);
       window.removeEventListener('focus', handleWindowFocus);
+      cookieManager.stopCookieMonitoring();
     };
-  }, [user, tokenData, checkTokenExpiration]);
+  }, [user, tokenData, checkTokenExpiration, performAutoLogout]);
 
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {
@@ -149,6 +162,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
+      // Stop cookie monitoring before logout
+      cookieManager.stopCookieMonitoring();
       await authService.logout();
       setUser(null);
       setTokenData(null);

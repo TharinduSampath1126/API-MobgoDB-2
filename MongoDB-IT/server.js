@@ -3,8 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
-import userRoutes from "./routes/usersRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./Routes/usersRoutes.js";
+import authRoutes from "./Routes/authRoutes.js";
 import protectedRoutes from "./routes/protectedRoutes.js";
 
 dotenv.config();
@@ -26,10 +26,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
 
-// Example route
-app.get("/", (req, res) => {
-  res.send("Server is running");
-});
+
 
 // 404 handler for API routes - must come after all API route definitions
 app.use("/api", (req, res) => {
