@@ -5,12 +5,12 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import userRoutes from "./Routes/usersRoutes.js";
 import authRoutes from "./Routes/authRoutes.js";
-import protectedRoutes from "./routes/protectedRoutes.js";
+import protectedRoutes from "./Routes/protectedRoutes.js";
 
 dotenv.config();
 const app = express();
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']

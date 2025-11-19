@@ -104,20 +104,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
-    // Re-enabled: Token expiration checking to handle backend token expiry
-    // Check every 2 minutes for better responsiveness to expired tokens
+    console.log('🔐 Starting enhanced authentication monitoring...');
+
+    // Enhanced token expiration checking - check every 30 seconds for better responsiveness
     const tokenCheckInterval = setInterval(() => {
       checkTokenExpiration();
-    }, 2 * 60 * 1000);
+    }, 30 * 1000);
 
-    // Also check on window focus
-    const handleWindowFocus = () => {
-      checkTokenExpiration();
+    // Real-time cookie monitoring - check auth status every 10 seconds
+    const cookieCheckInterval = setInterval(async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/protected/profile', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.status === 401) {
+          console.log('🚨 Real-time check: auth_token missing or expired - auto logout');
+          performAutoLogout();
+        }
+      } catch (error) {
+        console.log('Auth check network error:', error);
+      }
+    }, 10 * 1000); // Check every 10 seconds
+
+    // Immediate check on window focus
+    const handleWindowFocus = async () => {
+      console.log('🔍 Window focused - checking authentication status');
+      
+      // First check token expiration
+      const isExpired = checkTokenExpiration();
+      
+      // If token not expired, check cookie status
+      if (!isExpired) {
+        try {
+          const response = await fetch('http://localhost:5000/api/protected/profile', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (response.status === 401) {
+            console.log('🚨 Focus check: auth_token missing or expired - auto logout');
+            performAutoLogout();
+          }
+        } catch (error) {
+          console.log('Focus auth check error:', error);
+        }
+      }
     };
 
-    // Start cookie monitoring for manual deletion
+    // Start legacy cookie monitoring as backup
     cookieManager.startCookieMonitoring(() => {
-      console.log('Cookie deleted manually - logging out');
+      console.log('🚨 Cookie monitor detected deletion - logging out');
       performAutoLogout();
     });
 
@@ -126,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Cleanup
     return () => {
       clearInterval(tokenCheckInterval);
+      clearInterval(cookieCheckInterval);
       window.removeEventListener('focus', handleWindowFocus);
       cookieManager.stopCookieMonitoring();
     };

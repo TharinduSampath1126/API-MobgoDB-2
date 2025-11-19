@@ -6,6 +6,8 @@ import {
 } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/navbar/app-sidebar';
 import { LayoutHeader } from './layout-header';
+import { AuthStatusChecker } from '../auth/AuthStatusChecker';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 type LayoutProps = {
@@ -14,6 +16,7 @@ type LayoutProps = {
 
 const MainContent = ({ children }: { children: ReactNode }) => {
   const { open, isMobile } = useSidebar();
+  const { logout } = useAuth();
 
   return (
     <SidebarInset
@@ -24,6 +27,17 @@ const MainContent = ({ children }: { children: ReactNode }) => {
       }}
     >
       <LayoutHeader />
+      
+      {/* Real-time Auth Status Checker - Only show in development or for testing */}
+      {/* {process.env.NODE_ENV === 'development' && (
+        <AuthStatusChecker 
+          onAuthLost={async () => {
+            console.log('🚨 Auth lost detected by checker - logging out');
+            await logout();
+          }} 
+        />
+      )}
+       */}
       <main className="min-h-screen p-6">
         <div className="w-full max-w-full overflow-x-auto">{children}</div>
       </main>
