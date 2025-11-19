@@ -19,6 +19,23 @@ export async function fetchUsers(): Promise<User[]> {
 	return users;
 }
 
+// Paginated fetch function
+export async function fetchUsersPaginated(params: {
+	page?: number;
+	limit?: number;
+	search?: string;
+}) {
+	const { page = 1, limit = 10, search = '' } = params;
+	const queryParams = new URLSearchParams({
+		page: page.toString(),
+		limit: limit.toString(),
+		...(search && { search })
+	});
+	
+	const res = await axios.get(`${API_BASE_URL}?${queryParams}`);
+	return res.data;
+}
+
 export async function fetchUserById(id: number): Promise<User> {
 	const res = await axios.get(`${API_BASE_URL}/${id}`);
 	return {
@@ -69,6 +86,7 @@ export async function deleteUser(id: number): Promise<void> {
 // Export individual functions for React Query hooks
 export const userApi = {
 	fetchUsers,
+	fetchUsersPaginated,
 	fetchUserById,
 	createUser,
 	updateUser,

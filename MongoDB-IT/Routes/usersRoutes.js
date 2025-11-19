@@ -3,21 +3,50 @@ import User from '../Models/UserModels.js';
 
 const router = express.Router();
 
-// GET all users
+// GET all users with pagination and search
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    
+    // Build search query
+    const searchQuery = search ? {
+      $or: [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ]
+    } : {};
+    
+    const [users, total] = await Promise.all([
+      User.find(searchQuery)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(searchQuery)
+    ]);
+    
     res.json({
       success: true,
       users: users.map(user => ({
-        id: user.id, // Use custom id field
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         age: user.age,
         email: user.email,
         phone: user.phone,
-        birthDate: user.birthDate.toISOString().split('T')[0] // Format as YYYY-MM-DD
-      }))
+        birthDate: user.birthDate.toISOString().split('T')[0]
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
     });
   } catch (error) {
     console.error('Error fetching users:', error);

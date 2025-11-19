@@ -1,140 +1,146 @@
-import { DataTablePagination } from '@/components/customUi/pagination';
-import RowsPerPageSelect from '@/components/customUi/rows-per-page-select';
-import React from 'react';
-import { columns, User } from '@/components/data-table/columns';
-import { productColumns } from '@/pages/pageB/tables/table-columns/product-columns';
-import { useUsers } from '@/hooks/useUserQueries';
-import { useProducts } from '@/hooks/useProductQueries';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import TableColumnsDropdown from '@/components/data-table/table-columns-dropdown';
-import SuccessAlert from '@/components/customUi/success-alert';
-import { DataTable } from '@/components/data-table/data-table';
+import { ServerPagination } from '@/components/customUi/server-pagination';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-type Props = {
-  data?: User[];
-};
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  category: string;
+  brand: string;
+  stock: number;
+  rating: number;
+  thumbnail: string;
+}
 
-export default function UsersTable({ data }: Props) {
-  const { data: apiData } = useUsers();
-  const { data: productsData } = useProducts();
-  const [table, setTable] = React.useState<any | null>(null);
-  const [successOpen, setSuccessOpen] = React.useState(false);
+interface ApiResponse {
+  products: Product[];
+  total: number;
+  skip: number;
+  limit: number;
+}
 
-  // State for data-based pagination
-  const [currentPage, setCurrentPage] = React.useState(0);
-  const [pageSize] = React.useState(10);
+export default function ProductsTable() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Get the actual data array for pagination - prioritize products data
-  const actualData = productsData ?? data ?? apiData ?? [];
-
-  // helper to support both the raw TanStack table instance and the
-  // wrapper API object we pass from DataTable (which contains a `table` field).
-
-  const getColumn = React.useCallback(
-    (id: string) => {
-      if (!table) return undefined;
-      if (typeof table.getColumn === 'function') return table.getColumn(id);
-      if (table.table && typeof table.table.getColumn === 'function')
-        return table.table.getColumn(id);
-      return undefined;
-    },
-    [table]
-  );
-
-  // Build a lightweight columns array for the dropdown and a toggle handler
-  const dropdownColumns = React.useMemo(() => {
-    const currentColumns = productsData ? productColumns : columns;
-    return currentColumns.map((col: any) => {
-      const id = col.id ?? col.accessorKey;
-      const label = typeof col.header === 'string' ? col.header : id;
-      const isVisible = getColumn(id)?.getIsVisible?.() ?? true;
-      return { id, label, isVisible };
-    });
-    // include `table` because visibility is read from it when available
-  }, [columns, productColumns, table, getColumn, productsData]);
-
-  const handleToggleColumn = React.useCallback(
-    (id: string, visible: boolean) => {
-      // Prefer the table API if available
-      const col = getColumn(id);
-      if (col?.toggleVisibility) {
-        col.toggleVisibility(visible);
-        return;
+  const fetchProducts = async (page: number, limit: number, search = '') => {
+    setLoading(true);
+    try {
+      const skip = (page - 1) * limit;
+      let url = `https://dummyjson.com/products?limit=${limit}&skip=${skip}`;
+      
+      if (search) {
+        url = `https://dummyjson.com/products/search?q=${search}&limit=${limit}&skip=${skip}`;
       }
+      
+      const response = await fetch(url);
+      const data: ApiResponse = await response.json();
+      
+      setProducts(data.products);
+      setTotal(data.total);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Fallback to setColumnVisibility if provided on the table wrapper
-      if (table?.setColumnVisibility) {
-        table.setColumnVisibility(id, visible);
-        return;
+  useEffect(() => {
+    fetchProducts(currentPage, pageSize, searchQuery);
+  }, [currentPage, pageSize, searchQuery]);
+
+  // Arrow key navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      } else if (e.key === 'ArrowRight' && currentPage < Math.ceil(total / pageSize)) {
+        setCurrentPage(prev => prev + 1);
       }
-      if (table?.table?.setColumnVisibility) {
-        table.table.setColumnVisibility(id, visible);
-        return;
-      }
-    },
-    [table, getColumn]
-  );
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentPage, total, pageSize]);
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="">
-      <h2 className="mb-4 text-2xl font-bold">Products Data</h2>
-
-      <div className="mb-5 flex">
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Products (Use ← → arrow keys to navigate)</h2>
+      
+      <div className="mb-4">
         <Input
-          placeholder={productsData ? "Filter products..." : "Filter names..."}
-          value={(getColumn(productsData ? 'title' : 'firstName')?.getFilterValue() as string) ?? ''}
-          onChange={(event) =>
-            getColumn(productsData ? 'title' : 'firstName')?.setFilterValue?.(event.target.value)
-          }
+          placeholder="Search products..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1); // Reset to first page on search
+          }}
           className="max-w-sm"
         />
-
-        <TableColumnsDropdown
-          columns={dropdownColumns}
-          onToggleColumn={handleToggleColumn}
-        />
       </div>
 
-      {/* <SuccessAlert open={successOpen} onOpenChange={setSuccessOpen} /> */}
+      {loading && <div className="text-center py-4">Loading...</div>}
+      
+      <div className="border rounded-lg mb-6">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Image</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">ID</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Title</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Brand</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Category</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Price</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Stock</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Rating</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {products.map((product) => (
+              <tr key={product.id} className="hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <img 
+                    src={product.thumbnail} 
+                    alt={product.title}
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-900">{product.id}</td>
+                <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">{product.title}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{product.brand}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{product.category}</td>
+                <td className="px-4 py-3 text-sm font-semibold text-gray-900">${product.price}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{product.stock}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{product.rating}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <DataTable
-        columns={productsData ? productColumns : columns as any}
-        data={actualData as any}
-        onTableChange={setTable}
-        columnHeaders={{
-          name: "Name",
-          username: "Username",
-          phone: "Phone",
-          email: "Email",
-          id: "ID",
-          website: "Website",
-          title: "Product Title",
-          brand: "Brand",
-          category: "Category",
-          price: "Price",
-          rating: "Rating",
-          stock: "Stock"
+      <ServerPagination
+        page={currentPage}
+        pages={totalPages}
+        total={total}
+        limit={pageSize}
+        hasNext={currentPage < totalPages}
+        hasPrev={currentPage > 1}
+        onPageChange={setCurrentPage}
+        onLimitChange={(limit) => {
+          setPageSize(limit);
+          setCurrentPage(1);
         }}
-        hiddenColumns={["id"]}
+        loading={loading}
       />
-
-      <div className="flex items-center justify-between py-4">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
-          <RowsPerPageSelect
-            value={`${table?.pageSize ?? 10}`}
-            onValueChange={(value) => table?.setPageSize?.(Number(value))}
-            className="h-8 w-[70px]"
-          />
-        </div>
-        <DataTablePagination
-          data={actualData as any}
-          pageSize={pageSize}
-          pageIndex={currentPage}
-          onPageChange={setCurrentPage}
-          showPageJump={true}
-        />
-      </div>
     </div>
   );
 }
