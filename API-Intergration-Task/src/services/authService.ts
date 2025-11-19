@@ -5,11 +5,13 @@ export interface AuthResponse {
     id: string;
     name: string;
     email: string;
+    role: 'admin' | 'student';
   };
   tokenData: {
     userId: string;
     name: string;
     email: string;
+    role: 'admin' | 'student';
     iat: number;
     exp: number;
   };
@@ -25,6 +27,7 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   confirmPassword: string;
+  role?: 'admin' | 'student';
 }
 
 class AuthService {
@@ -58,14 +61,15 @@ class AuthService {
   }
 
   // Get user data from token data
-  getUserFromToken(): { id: string; name: string; email: string } | null {
+  getUserFromToken(): { id: string; name: string; email: string; role: 'admin' | 'student' } | null {
     const tokenData = this.getTokenData();
     if (!tokenData) return null;
     
     return {
       id: tokenData.userId,
       name: tokenData.name,
-      email: tokenData.email
+      email: tokenData.email,
+      role: tokenData.role
     };
   }
 

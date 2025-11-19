@@ -91,8 +91,7 @@ function loging({ onLogin }: LogingProps) {
       // Show success message
       toast.success('Login successful!');
       
-      // Navigate to dashboard after successful login
-      navigate('/dashboard');
+      // Role-based navigation will be handled by RoleBasedRedirect component
       
     } catch (error) {
       console.error('Login error:', error);

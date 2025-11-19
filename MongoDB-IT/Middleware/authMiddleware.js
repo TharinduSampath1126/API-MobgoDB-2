@@ -7,7 +7,8 @@ export const generateToken = (user) => {
     {
       userId: user._id,
       email: user.email,
-      name: user.name
+      name: user.name,
+      role: user.role
     },
     process.env.JWT_SECRET || 'your-secret-key',
     { expiresIn: '1h' }
@@ -53,6 +54,27 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
+// Role-based authorization middleware
+export const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Insufficient permissions.'
+      });
+    }
+
+    next();
+  };
+};
+
 // Refresh token
 export const refreshToken = async (req, res) => {
   try {
@@ -89,9 +111,10 @@ export const refreshToken = async (req, res) => {
       success: true,
       token: newToken, // Send new token for frontend decoding
       user: {
-        // id: user._id,
+        id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role
       }
     });
   } catch (error) {

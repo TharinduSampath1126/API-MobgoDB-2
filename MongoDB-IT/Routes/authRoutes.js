@@ -7,7 +7,7 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword, role = 'student' } = req.body;
     
     console.log('Registration request:', { name, email });
     
@@ -40,7 +40,8 @@ router.post('/register', async (req, res) => {
     const newUser = new AuthUser({
       name,
       email,
-      password
+      password,
+      role
     });
     
     await newUser.save();
@@ -127,7 +128,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role
       }
     });
     

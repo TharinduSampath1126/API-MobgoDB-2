@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, AlertCircle } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle, Shield } from 'lucide-react';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -20,6 +20,9 @@ const registerSchema = z.object({
     .max(100, 'Password must be less than 100 characters'),
   confirmPassword: z.string()
     .min(1, 'Password confirmation is required'),
+  role: z.enum(['admin', 'student'], {
+    required_error: 'Role is required',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
@@ -30,6 +33,7 @@ interface RegisterData {
   email: string;
   password: string;
   confirmPassword: string;
+  role: 'admin' | 'student';
 }
 
 interface ValidationErrors {
@@ -37,6 +41,7 @@ interface ValidationErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  role?: string;
 }
 
 interface SignupProps {
@@ -50,13 +55,14 @@ function signup({ onRegister }: SignupProps) {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'student'
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -103,6 +109,7 @@ function signup({ onRegister }: SignupProps) {
         email: formData.email,
         password: formData.password,
         confirmPassword: formData.confirmPassword,
+        role: formData.role,
       });
       
       if (result.success) {
@@ -232,6 +239,32 @@ function signup({ onRegister }: SignupProps) {
                 <div className="flex items-center mt-1 text-red-500 text-sm">
                   <AlertCircle className="w-4 h-4 mr-1" />
                   {errors.confirmPassword}
+                </div>
+              )}
+            </div>
+
+            {/* Role Selection */}
+            <div className="relative">
+              <div className={`flex items-center bg-gray-50 rounded-2xl px-4 py-4 border transition-all ${
+                errors.role 
+                  ? 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100' 
+                  : 'border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100'
+              }`}>
+                <Shield className="w-5 h-5 text-gray-400 mr-3" />
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="flex-1 bg-transparent outline-none text-gray-700"
+                >
+                  <option value="student">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              {errors.role && (
+                <div className="flex items-center mt-1 text-red-500 text-sm">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.role}
                 </div>
               )}
             </div>

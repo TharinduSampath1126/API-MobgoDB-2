@@ -5,6 +5,7 @@ import { useUsers } from '@/hooks/useUserQueries';
 import { useProducts } from '@/hooks/useProductQueries';
 import { usePostStore } from '@/store/postStore';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 // Chart imports
@@ -13,6 +14,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: users = [], isLoading } = useUsers();
   const { data: products = [] } = useProducts();
   const newPosts = usePostStore((s) => s.newPosts);
@@ -169,7 +171,7 @@ export default function AdminDashboard() {
           <h1 className="text-4xl font-bold bg-black bg-clip-text text-transparent">
             Admin Dashboard
           </h1>
-          <p className="text-slate-600 mt-2 text-lg">Welcome back! Here's what's happening with your data</p>
+          <p className="text-slate-600 mt-2 text-lg">Welcome back, {user?.name}! ({user?.role})</p>
         </div>
         <div className="flex gap-3">
           <Button 

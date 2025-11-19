@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import NewlyAddedUsersTable from './pages/pageA/users';
 import UsersTable from './pages/pageB/products';
 import AdminDashboard from './pages/admin/Dashboard';
+import { StudentDashboard } from './pages/student/StudentDashboard';
 import Layout from './components/layout/layout';
 import NotFound from './pages/NotFound/NotFound';
 import LoginPage from './pages/auth/loging';
@@ -12,6 +13,8 @@ import UserProfile from './components/user-profile/profile';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { RoleBasedRoute } from './components/auth/RoleBasedRoute';
+import { RoleBasedRedirect } from './components/auth/RoleBasedRedirect';
 import { PublicRoute } from './components/auth/PublicRoute';
 import { Toaster } from 'sonner';
 
@@ -28,8 +31,8 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
           <Toaster
             position="bottom-right"
             duration={4000}
@@ -45,9 +48,12 @@ function App() {
             <Route 
               path="/" 
               element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
+                <>
+                  <RoleBasedRedirect />
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                </>
               } 
             />
             <Route 
@@ -59,6 +65,32 @@ function App() {
               } 
             />
 
+            <Route
+              path="/admin/dashboard"
+              element={
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <Layout>
+                    <div className="mx-5">
+                      <br />
+                      <AdminDashboard />
+                    </div>
+                  </Layout>
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/student/dashboard"
+              element={
+                <RoleBasedRoute allowedRoles={['student']}>
+                  <Layout>
+                    <div className="mx-5">
+                      <br />
+                      <StudentDashboard />
+                    </div>
+                  </Layout>
+                </RoleBasedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
@@ -75,27 +107,27 @@ function App() {
             <Route
               path="/products"
               element={
-                <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['admin']}>
                   <Layout>
                     <div className="mx-5">
                       <br />
                       <UsersTable />
                     </div>
                   </Layout>
-                </ProtectedRoute>
+                </RoleBasedRoute>
               }
             />
             <Route
               path="/users"
               element={
-                <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['admin']}>
                   <Layout>
                     <div className="mx-5">
                       <br />
                       <NewlyAddedUsersTable />
                     </div>
                   </Layout>
-                </ProtectedRoute>
+                </RoleBasedRoute>
               }
             />
             <Route
@@ -111,8 +143,8 @@ function App() {
             {/* Catch-all route for 404 errors */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </QueryClientProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

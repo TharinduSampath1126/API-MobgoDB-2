@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock } from 'lucide-react';
+import { User, Mail, Lock, Shield } from 'lucide-react';
 
 interface RegisterData {
   name: string;
   email: string;
   password: string;
+  role: 'admin' | 'student';
 }
 
 interface SignupProps {
@@ -16,12 +17,13 @@ function signup({ onRegister, onLoginClick }: SignupProps) {
   const [formData, setFormData] = useState<RegisterData>({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    role: 'student'
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -102,6 +104,23 @@ function signup({ onRegister, onLoginClick }: SignupProps) {
                   className="flex-1 bg-transparent outline-none text-gray-700 placeholder-gray-400"
                   required
                 />
+              </div>
+            </div>
+
+            {/* Role Selection */}
+            <div className="relative">
+              <div className="flex items-center bg-gray-50 rounded-2xl px-4 py-4 border border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <Shield className="w-5 h-5 text-gray-400 mr-3" />
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleInputChange}
+                  className="flex-1 bg-transparent outline-none text-gray-700"
+                  required
+                >
+                  <option value="student">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
             </div>
 
