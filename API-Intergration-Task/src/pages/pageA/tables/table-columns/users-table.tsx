@@ -4,17 +4,19 @@ import { DataTable } from '@/components/data-table/data-table';
 type Props = {
   data: User[];
   onTableChange?: (table: any) => void;
+  readOnly?: boolean;
 };
 
-export default function UsersTable({ data, onTableChange }: Props) {
+export default function UsersTable({ data, onTableChange, readOnly = false }: Props) {
   return (
     <DataTable
       columns={columns}
       data={data}
       onTableChange={onTableChange}
+      readOnly={readOnly}
       // Column customization props
       
-      columnOrder={['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age', 'actions']}
+      columnOrder={readOnly ? ['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age'] : ['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age', 'actions']}
       columnWidths={{
         'id': 60,
         'firstName': 120,
@@ -22,7 +24,7 @@ export default function UsersTable({ data, onTableChange }: Props) {
         'email': 200,
         'phone': 140,
         'birthDate': 120,
-        'actions': 120
+        'actions': readOnly ? 0 : 120
       }}
       columnHeaders={{
         'firstName': 'firstName',

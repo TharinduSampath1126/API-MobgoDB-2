@@ -9,6 +9,7 @@ import TableColumnsDropdown from '@/components/data-table/table-columns-dropdown
 import { ServerPagination } from '@/components/customUi/server-pagination';
 import UsersTable from './tables/table-columns/users-table';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Props = {
   data?: User[];
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const createUserMutation = useCreateUser();
   const [addOpen, setAddOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -111,36 +114,41 @@ export default function NewlyAddedUsersTable({ data, onAddData }: Props) {
         <div className="flex gap-5">
           <TableColumnsDropdown table={table} />
 
-          <Button 
-            onClick={() => setAddOpen(true)}
-            disabled={createUserMutation.isPending || loading}
-          >
-            {createUserMutation.isPending ? 'Adding...' : 'Add Data'}
-          </Button>
+          {isAdmin && (
+            <Button 
+              onClick={() => setAddOpen(true)}
+              disabled={createUserMutation.isPending || loading}
+            >
+              {createUserMutation.isPending ? 'Adding...' : 'Add Data'}
+            </Button>
+          )}
         </div>
       </div>
 
-      <UserForm
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        nextId={getNextId()}
-        onSubmit={async (d) => {
-          try {
-            await handleAdd(d as User);
-            setAddOpen(false);
-            setSuccessOpen(true);
-          } catch (error) {
-            // Error handling - could show error message
-            console.error('Error creating user:', error);
-          }
-        }}
-      />
+      {isAdmin && (
+        <UserForm
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          nextId={getNextId()}
+          onSubmit={async (d) => {
+            try {
+              await handleAdd(d as User);
+              setAddOpen(false);
+              setSuccessOpen(true);
+            } catch (error) {
+              // Error handling - could show error message
+              console.error('Error creating user:', error);
+            }
+          }}
+        />
+      )}
 
       {/* <SuccessAlert open={successOpen} onOpenChange={setSuccessOpen} /> */}
 
       <UsersTable
         data={displayUsers}
         onTableChange={setTable}
+        readOnly={!isAdmin}
       />
 
       {!data && (

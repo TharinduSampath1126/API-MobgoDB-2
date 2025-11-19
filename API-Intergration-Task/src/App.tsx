@@ -107,7 +107,7 @@ function App() {
             <Route
               path="/products"
               element={
-                <RoleBasedRoute allowedRoles={['admin']}>
+                <RoleBasedRoute allowedRoles={['admin', 'student']}>
                   <Layout>
                     <div className="mx-5">
                       <br />
@@ -120,7 +120,7 @@ function App() {
             <Route
               path="/users"
               element={
-                <RoleBasedRoute allowedRoles={['admin']}>
+                <RoleBasedRoute allowedRoles={['admin', 'student']}>
                   <Layout>
                     <div className="mx-5">
                       <br />
