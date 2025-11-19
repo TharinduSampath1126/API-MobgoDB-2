@@ -1,7 +1,18 @@
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ServerPaginationProps {
   page: number;
@@ -24,14 +35,14 @@ export function ServerPagination({
   hasPrev,
   onPageChange,
   onLimitChange,
-  loading = false
+  loading = false,
 }: ServerPaginationProps) {
   const startItem = (page - 1) * limit + 1;
   const endItem = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between px-2">
-      <div className="flex items-center space-x-6 lg:space-x-8">
+    <div className="flex items-center w-full justify-between px-2">
+      <div className="flex  justify-between  w-full space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Rows per page</p>
           <Select
@@ -51,64 +62,66 @@ export function ServerPagination({
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          {total > 0 ? `${startItem}-${endItem} of ${total}` : 'No data'}
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Page</p>
-          <Input
-            className="w-16 h-8"
-            value={page}
-            onChange={(e) => {
-              const newPage = Number(e.target.value);
-              if (newPage >= 1 && newPage <= pages) {
-                onPageChange(newPage);
-              }
-            }}
-            disabled={loading}
-          />
-          <p className="text-sm font-medium">of {pages}</p>
-        </div>
 
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="hidden h-8 w-8 lg:flex"
-            onClick={() => onPageChange(1)}
-            disabled={!hasPrev || loading}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => onPageChange(page - 1)}
-            disabled={!hasPrev || loading}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => onPageChange(page + 1)}
-            disabled={!hasNext || loading}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="hidden h-8 w-8 lg:flex"
-            onClick={() => onPageChange(pages)}
-            disabled={!hasNext || loading}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
+        <div className='flex gap-5'>
+          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+            {total > 0 ? `${startItem}-${endItem} of ${total}` : 'No data'}
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">Page</p>
+            <Input
+              className="h-8 w-16"
+              value={page}
+              onChange={(e) => {
+                const newPage = Number(e.target.value);
+                if (newPage >= 1 && newPage <= pages) {
+                  onPageChange(newPage);
+                }
+              }}
+              disabled={loading}
+            />
+            <p className="text-sm font-medium">of {pages}</p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="hidden h-8 w-8 lg:flex"
+              onClick={() => onPageChange(1)}
+              disabled={!hasPrev || loading}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onPageChange(page - 1)}
+              disabled={!hasPrev || loading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onPageChange(page + 1)}
+              disabled={!hasNext || loading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="hidden h-8 w-8 lg:flex"
+              onClick={() => onPageChange(pages)}
+              disabled={!hasNext || loading}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

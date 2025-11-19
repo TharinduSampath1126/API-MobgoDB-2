@@ -28,16 +28,6 @@ const MainContent = ({ children }: { children: ReactNode }) => {
     >
       <LayoutHeader />
       
-      {/* Real-time Auth Status Checker - Only show in development or for testing */}
-      {/* {process.env.NODE_ENV === 'development' && (
-        <AuthStatusChecker 
-          onAuthLost={async () => {
-            console.log('🚨 Auth lost detected by checker - logging out');
-            await logout();
-          }} 
-        />
-      )}
-       */}
       <main className="min-h-screen p-6">
         <div className="w-full max-w-full overflow-x-auto">{children}</div>
       </main>

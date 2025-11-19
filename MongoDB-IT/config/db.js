@@ -11,7 +11,7 @@ const connectDB = async () => {
     });
     
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database Name: ${conn.connection.name}`);
+    // console.log(`📊 Database Name: ${conn.connection.name}`);
   } catch (error) {
     console.error("❌ MongoDB Connection Error:", error.message);
     process.exit(1);
@@ -20,7 +20,7 @@ const connectDB = async () => {
 
 // MongoDB connection events
 mongoose.connection.on('connected', () => {
-  console.log('🔗 Mongoose connected to MongoDB');
+  // console.log('🔗 Mongoose connected to MongoDB');
 });
 
 mongoose.connection.on('error', (err) => {
