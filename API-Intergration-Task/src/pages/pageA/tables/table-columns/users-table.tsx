@@ -1,5 +1,6 @@
-import { columns, User } from '@/components/data-table/columns';
+import { columns, viewOnlyColumns, User } from '@/components/data-table/columns';
 import { DataTable } from '@/components/data-table/data-table';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Props = {
   data: User[];
@@ -8,15 +9,18 @@ type Props = {
 };
 
 export default function UsersTable({ data, onTableChange, readOnly = false }: Props) {
+  const { user } = useAuth();
+  const isStudent = user?.role === 'student';
+  
   return (
     <DataTable
-      columns={columns}
+      columns={isStudent ? viewOnlyColumns : columns}
       data={data}
       onTableChange={onTableChange}
       readOnly={readOnly}
       // Column customization props
       
-      columnOrder={readOnly ? ['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age'] : ['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age', 'actions']}
+      columnOrder={isStudent ? ['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age', 'view'] : ['id', 'firstName', 'lastName', 'email', 'phone', 'birthDate','age', 'actions']}
       columnWidths={{
         'id': 60,
         'firstName': 120,
@@ -24,7 +28,8 @@ export default function UsersTable({ data, onTableChange, readOnly = false }: Pr
         'email': 200,
         'phone': 140,
         'birthDate': 120,
-        'actions': readOnly ? 0 : 120
+        'actions': 120,
+        'view': 80
       }}
       columnHeaders={{
         'firstName': 'firstName',

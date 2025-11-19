@@ -71,6 +71,31 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>;
 
 
+function ViewOnlyCell({ user }: { user: User }) {
+  const [showDialog, setShowDialog] = useState(false);
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowDialog(true)}
+          className="h-8 w-8 p-0"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <UserDetailsDialog
+        user={user}
+        open={showDialog}
+        onOpenChange={setShowDialog}
+      />
+    </>
+  );
+}
+
 function ActionsCell({ user }: { user: User }) {
   const [showDialog, setShowDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -206,5 +231,41 @@ export const columns: ColumnDef<User>[] = [
     id: 'actions',
     header: 'Actions',
     cell: ({ row }) => <ActionsCell user={row.original} />,
+  },
+];
+
+export const viewOnlyColumns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'id',
+    header: 'ID',
+  },
+  {
+    accessorKey: 'firstName',
+    header: 'First Name',
+  },
+  {
+    accessorKey: 'lastName',
+    header: 'Last Name',
+  },
+  {
+    accessorKey: 'email',
+    header: 'Email',
+  },
+  {
+    accessorKey: 'phone',
+    header: 'Phone',
+  },
+  {
+    accessorKey: 'age',
+    header: 'Age',
+  },
+  {
+    accessorKey: 'birthDate',
+    header: 'Birth Date',
+  },
+  {
+    id: 'view',
+    header: 'View',
+    cell: ({ row }) => <ViewOnlyCell user={row.original} />,
   },
 ];

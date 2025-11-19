@@ -18,6 +18,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   onAddData?: (newData: any) => void;
   onTableChange?: (table: any) => void;
+  readOnly?: boolean; // Hide action columns for read-only mode
   
   // Column customization props
   hiddenColumns?: string[]; // Array of column IDs to hide
@@ -46,6 +47,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   onTableChange,
+  readOnly = false,
   
   // Column customization props
   hiddenColumns = [],
@@ -107,12 +109,13 @@ export function DataTable<TData, TValue>({
       });
     }
 
-    // Filter out hidden columns
-    if (hiddenColumns.length > 0) {
+    // Filter out hidden columns and actions column if readOnly
+    const columnsToHide = readOnly ? [...hiddenColumns, 'actions'] : hiddenColumns;
+    if (columnsToHide.length > 0) {
       workingColumns = workingColumns.filter(col => {
         const colId = ('accessorKey' in col && col.accessorKey) || col.id;
         const colIdStr = typeof colId === 'string' ? colId : String(colId);
-        return colIdStr ? !hiddenColumns.includes(colIdStr) : true;
+        return colIdStr ? !columnsToHide.includes(colIdStr) : true;
       });
     }
 
