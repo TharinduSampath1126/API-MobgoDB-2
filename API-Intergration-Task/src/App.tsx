@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import NewlyAddedUsersTable from './pages/pageA/users';
 import UsersTable from './pages/pageB/products';
+import ManualProductsPage from './pages/pageB/manual-products';
 import AdminDashboard from './pages/admin/Dashboard';
 import { StudentDashboard } from './pages/student/StudentDashboard';
 import Layout from './components/layout/layout';
@@ -112,6 +113,19 @@ function App() {
                     <div className="mx-5">
                       <br />
                       <UsersTable />
+                    </div>
+                  </Layout>
+                </RoleBasedRoute>
+              }
+            />
+            <Route
+              path="/manual-products"
+              element={
+                <RoleBasedRoute allowedRoles={['admin', 'student']}>
+                  <Layout>
+                    <div className="mx-5">
+                      <br />
+                      <ManualProductsPage />
                     </div>
                   </Layout>
                 </RoleBasedRoute>

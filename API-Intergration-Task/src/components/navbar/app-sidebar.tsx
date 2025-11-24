@@ -1,4 +1,4 @@
-import { BarChart3,  UserPlus,  ChevronLeft, Menu, Package } from "lucide-react"
+import { BarChart3,  UserPlus,  ChevronLeft, Menu, Package, Plus } from "lucide-react"
 import { useNavigate, useLocation } from 'react-router'
 
 import {
@@ -31,7 +31,11 @@ const items = [
     url: "/products",
     icon: Package,
   },
-  
+  {
+    title: "Add Products",
+    url: "/manual-products",
+    icon: Plus,
+  },
 ]
 
 export function AppSidebar() {

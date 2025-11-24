@@ -74,7 +74,7 @@ export default function ProductsTable() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Products (Use ← → arrow keys to navigate)</h2>
+      <h2 className="text-2xl font-bold mb-4">API Data </h2>
       
       <div className="mb-4">
         <Input

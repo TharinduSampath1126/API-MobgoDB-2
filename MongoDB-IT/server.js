@@ -7,6 +7,7 @@ import userRoutes from "./Routes/usersRoutes.js";
 import authRoutes from "./Routes/authRoutes.js";
 import protectedRoutes from "./Routes/protectedRoutes.js";
 import roleRoutes from "./Routes/roleRoutes.js";
+import productRoutes from "./Routes/productRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -16,7 +17,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 
 // Connect MongoDB
@@ -27,6 +29,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
 app.use("/api/role", roleRoutes);
+app.use("/api/products", productRoutes);
 
 
 
