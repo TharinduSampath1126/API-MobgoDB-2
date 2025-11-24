@@ -37,6 +37,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData }: Pro
     }
   );
   const [imagePreview, setImagePreview] = useState<string>(initialData?.image || '');
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -46,16 +47,35 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData }: Pro
     }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setImagePreview(base64);
-        setFormData(prev => ({ ...prev, image: base64 }));
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      setUploading(true);
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('upload_preset', 'product');
+      formDataUpload.append('cloud_name', 'dz3qjz555');
+
+      try {
+        const response = await fetch('https://api.cloudinary.com/v1_1/dz3qjz555/image/upload', {
+          method: 'POST',
+          body: formDataUpload,
+        });
+        const data = await response.json();
+        if (data.secure_url) {
+          setFormData(prev => ({ ...prev, image: data.secure_url }));
+        }
+      } catch (error) {
+        console.error('Image upload error:', error);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -94,8 +114,10 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData }: Pro
               type="file"
               accept="image/*"
               onChange={handleImageChange}
+              disabled={uploading}
               className="cursor-pointer"
             />
+            {uploading && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
             {imagePreview && (
               <img src={imagePreview} alt="Preview" className="mt-2 w-full h-32 object-cover rounded" />
             )}
@@ -192,7 +214,7 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData }: Pro
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>
+          <Button onClick={handleSubmit} disabled={uploading}>
             {initialData ? 'Update' : 'Add'} Product
           </Button>
         </DialogFooter>

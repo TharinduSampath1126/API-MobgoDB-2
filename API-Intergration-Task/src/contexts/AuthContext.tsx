@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         console.log('Auth check network error:', error);
       }
-    }, 10 * 1000); // Check every 10 seconds
+    }, 1 * 1000); // Check every 1 seconds
 
     // Immediate check on window focus
     const handleWindowFocus = async () => {

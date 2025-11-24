@@ -16,7 +16,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (!allowedRoles.includes(user.role)) {
