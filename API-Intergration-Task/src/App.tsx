@@ -11,6 +11,7 @@ import NotFound from './pages/NotFound/NotFound';
 import LoginPage from './pages/auth/loging';
 import SignupPage from './pages/auth/signup';
 import UserProfile from './components/user-profile/profile';
+import Contact from './pages/contact/contact';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -152,6 +153,19 @@ function App() {
                     <UserProfile />
                   </Layout>
                 </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <RoleBasedRoute allowedRoles={['admin', 'student']}>
+                  <Layout>
+                    <div className="mx-5">
+                      <br />
+                      <Contact />
+                    </div>
+                  </Layout>
+                </RoleBasedRoute>
               }
             />
             {/* Catch-all route for 404 errors */}

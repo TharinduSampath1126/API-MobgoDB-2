@@ -1,4 +1,4 @@
-import { BarChart3,  UserPlus,  ChevronLeft, Menu, Package, Plus } from "lucide-react"
+import { BarChart3,  UserPlus,  ChevronLeft, Menu, Package, Plus, Mail } from "lucide-react"
 import { useNavigate, useLocation } from 'react-router'
 
 import {
@@ -35,6 +35,11 @@ const items = [
     title: "Add Products",
     url: "/manual-products",
     icon: Plus,
+  },
+  {
+    title: "Contact",
+    url: "/contact",
+    icon: Mail,
   },
 ]
 
