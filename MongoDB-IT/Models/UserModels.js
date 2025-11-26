@@ -46,6 +46,11 @@ const userSchema = new mongoose.Schema({
       },
       message: 'Birth date cannot be in the future'
     }
+  },
+  profileImage: {
+    type: String,
+    required: false,
+    default: null
   }
 }, {
   timestamps: true // This adds createdAt and updatedAt fields

@@ -66,6 +66,7 @@ export const UserSchema = z.object({
       },
       { message: 'Birth date cannot be in the future' }
     ),
+  profileImage: z.string().optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;
@@ -200,6 +201,28 @@ function ActionsCell({ user }: { user: User }) {
 
 export const columns: ColumnDef<User>[] = [
   {
+    accessorKey: 'profileImage',
+    header: 'Image',
+    cell: ({ row }) => {
+      const image = row.original.profileImage;
+      return (
+        <div className="flex items-center justify-center w-16 h-16">
+          {image ? (
+            <img
+              src={image}
+              alt="Profile"
+              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+              No Image
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: 'id',
     header: 'ID',
   },
@@ -235,6 +258,28 @@ export const columns: ColumnDef<User>[] = [
 ];
 
 export const viewOnlyColumns: ColumnDef<User>[] = [
+  {
+    accessorKey: 'profileImage',
+    header: 'Image',
+    cell: ({ row }) => {
+      const image = row.original.profileImage;
+      return (
+        <div className="flex items-center justify-center w-16 h-16">
+          {image ? (
+            <img
+              src={image}
+              alt="Profile"
+              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+              No Image
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
   {
     accessorKey: 'id',
     header: 'ID',

@@ -8,6 +8,7 @@ import authRoutes from "./Routes/authRoutes.js";
 import protectedRoutes from "./Routes/protectedRoutes.js";
 import roleRoutes from "./Routes/roleRoutes.js";
 import productRoutes from "./Routes/productRoutes.js";
+import imageRoutes from "./Routes/imageRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
 app.use("/api/role", roleRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/images", imageRoutes);
 
 
 

@@ -37,7 +37,8 @@ router.get('/', async (req, res) => {
         age: user.age,
         email: user.email,
         phone: user.phone,
-        birthDate: user.birthDate.toISOString().split('T')[0]
+        birthDate: user.birthDate.toISOString().split('T')[0],
+        profileImage: user.profileImage
       })),
       pagination: {
         page,
@@ -86,7 +87,8 @@ router.get('/:id', async (req, res) => {
       age: user.age,
       email: user.email,
       phone: user.phone,
-      birthDate: user.birthDate.toISOString().split('T')[0]
+      birthDate: user.birthDate.toISOString().split('T')[0],
+      profileImage: user.profileImage
     });
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -101,7 +103,7 @@ router.get('/:id', async (req, res) => {
 // POST create new user
 router.post('/add', async (req, res) => {
   try {
-    const { id, firstName, lastName, age, email, phone, birthDate } = req.body;
+    const { id, firstName, lastName, age, email, phone, birthDate, profileImage } = req.body;
     
     console.log('Create user request received:');
     console.log('Request body:', req.body);
@@ -158,7 +160,8 @@ router.post('/add', async (req, res) => {
       age,
       email,
       phone,
-      birthDate: new Date(birthDate)
+      birthDate: new Date(birthDate),
+      profileImage
     });
     
     console.log('Attempting to save user to database with ID:', id);
@@ -174,7 +177,8 @@ router.post('/add', async (req, res) => {
       age: savedUser.age,
       email: savedUser.email,
       phone: savedUser.phone,
-      birthDate: savedUser.birthDate.toISOString().split('T')[0]
+      birthDate: savedUser.birthDate.toISOString().split('T')[0],
+      profileImage: savedUser.profileImage
     });
   } catch (error) {
     console.error('Error creating user:', error);
@@ -230,7 +234,7 @@ router.post('/add', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const paramId = parseInt(req.params.id); // Convert URL param to number
-    const { id, firstName, lastName, age, email, phone, birthDate } = req.body;
+    const { id, firstName, lastName, age, email, phone, birthDate, profileImage } = req.body;
     
     console.log('Update request - URL ID:', paramId, 'Body ID:', id);
     console.log('Update data:', { firstName, lastName, age, email, phone, birthDate });
@@ -268,7 +272,8 @@ router.put('/:id', async (req, res) => {
         age,
         email,
         phone,
-        birthDate: new Date(birthDate)
+        birthDate: new Date(birthDate),
+        profileImage
       },
       { new: true, runValidators: true }
     );
@@ -291,7 +296,8 @@ router.put('/:id', async (req, res) => {
       age: updatedUser.age,
       email: updatedUser.email,
       phone: updatedUser.phone,
-      birthDate: updatedUser.birthDate.toISOString().split('T')[0]
+      birthDate: updatedUser.birthDate.toISOString().split('T')[0],
+      profileImage: updatedUser.profileImage
     });
   } catch (error) {
     console.error('Error updating user:', error);
