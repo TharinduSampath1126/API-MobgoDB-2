@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, AlertCircle, Shield } from 'lucide-react';
 import { z } from 'zod';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -15,7 +16,7 @@ const registerSchema = z.object({
     .min(1, 'Email is required')
     .email('Please enter a valid email address'),
   role: z.enum(['admin', 'student'], {
-    required_error: 'Role is required',
+    message: 'Role is required',
   }),
 });
 
@@ -59,6 +60,21 @@ function signup({ onRegister }: SignupProps) {
       setErrors(prev => ({
         ...prev,
         [name]: undefined
+      }));
+    }
+  };
+
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value as 'admin' | 'student'
+    }));
+    
+    // Clear role error when user selects a role
+    if (errors.role) {
+      setErrors(prev => ({
+        ...prev,
+        role: undefined
       }));
     }
   };
@@ -186,15 +202,15 @@ function signup({ onRegister }: SignupProps) {
                   : 'border-gray-200 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100'
               }`}>
                 <Shield className="w-5 h-5 text-gray-400 mr-3" />
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className="flex-1 bg-transparent outline-none text-gray-700"
-                >
-                  <option value="student">Student</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <Select value={formData.role} onValueChange={handleRoleChange}>
+                  <SelectTrigger className="flex-1 bg-transparent border-none outline-none text-gray-700 shadow-none focus:ring-0">
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {errors.role && (
                 <div className="flex items-center mt-1 text-red-500 text-sm">

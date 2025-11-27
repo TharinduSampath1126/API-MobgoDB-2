@@ -17,8 +17,13 @@ const ContactFormSchema = z.object({
     .email('Please enter a valid email address')
     .min(1, 'Email is required'),
   mobile: z.string()
-    .min(10, 'Please enter a valid mobile number')
-    .regex(/^\+?[1-9]\d{1,14}$/, 'Please enter a valid mobile number'),
+    .min(1, 'Mobile number is required')
+    .refine((phone) => {
+      // Remove all spaces, dashes, and parentheses for validation
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+      // Check if it's a valid phone number format
+      return /^\+?[1-9]\d{7,14}$/.test(cleanPhone);
+    }, 'Please enter a valid mobile number'),
   message: z.string()
     .min(10, 'Message must be at least 10 characters')
     .max(1000, 'Message must be less than 1000 characters'),
