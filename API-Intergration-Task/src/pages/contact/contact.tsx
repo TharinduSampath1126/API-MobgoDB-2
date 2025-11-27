@@ -1,15 +1,31 @@
 import React, { useState } from 'react';
+import emailjs from '@emailjs/browser';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Send, Mail, User, Phone, MessageSquare } from 'lucide-react';
 
-interface ContactFormData {
-  name: string;
-  email: string;
-  mobile: string;
-  message: string;
-}
+// Zod validation schema for contact form
+const ContactFormSchema = z.object({
+  name: z.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces'),
+  email: z.string()
+    .email('Please enter a valid email address')
+    .min(1, 'Email is required'),
+  mobile: z.string()
+    .min(10, 'Please enter a valid mobile number')
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Please enter a valid mobile number'),
+  message: z.string()
+    .min(10, 'Message must be at least 10 characters')
+    .max(1000, 'Message must be less than 1000 characters'),
+});
+
+// Type definitions using Zod
+type ContactFormData = z.infer<typeof ContactFormSchema>;
 
 interface FormErrors {
   name?: string;
@@ -28,7 +44,8 @@ const Contact: React.FC = () => {
   
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0); // Key to force form reset
 
   const clearFieldError = (field: keyof FormErrors) => {
     setErrors((prev) => {
@@ -39,39 +56,26 @@ const Contact: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    try {
+      // Validate using Zod schema
+      ContactFormSchema.parse(formData);
+      // Clear any existing errors if validation passes
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Convert Zod errors to our error format
+        const fieldErrors: FormErrors = {};
+        error.issues.forEach((issue) => {
+          const field = issue.path[0] as keyof FormErrors;
+          if (field) {
+            fieldErrors[field] = issue.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+      return false;
     }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    // Mobile validation
-    if (!formData.mobile.trim()) {
-      newErrors.mobile = 'Mobile number is required';
-    } else if (formData.mobile.trim().length < 10) {
-      newErrors.mobile = 'Please enter a valid mobile number';
-    }
-
-    // Message validation
-    if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,14 +86,48 @@ const Contact: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // EmailJS configuration from environment variables
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
       
-      console.log('Contact form submitted:', formData);
+      // Check if EmailJS is configured
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error('EmailJS configuration missing in environment variables');
+      }
+
+      // Prepare email template parameters
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        from_mobile: formData.mobile,
+        message: formData.message,
+        to_name: 'Admin', // You can change this to your name
+        reply_to: formData.email,
+      };
+
+      console.log('Sending email with parameters:', templateParams);
+
+      // Send email using EmailJS
+      const result = await emailjs.send(
+        serviceId,
+        templateId,
+        templateParams,
+        publicKey
+      );
+
+      console.log('Email sent successfully:', result);
       
-      // Reset form
+      // Show personalized success toast
+      toast.success(`Thank you ${formData.name}! Your message has been sent successfully.`, {
+        description: 'We will get back to you soon.',
+        duration: 5000,
+      });
+      
+      // Reset form completely
       setFormData({
         name: '',
         email: '',
@@ -97,15 +135,39 @@ const Contact: React.FC = () => {
         message: ''
       });
       
-      setSubmitSuccess(true);
+      // Clear any form errors
+      setErrors({});
+      setSubmitError(null);
       
-      // Hide success message after 5 seconds
+      // Force form re-render to clear PhoneInput
+      setFormKey(prev => prev + 1);
+      
+    } catch (error: any) {
+      console.error('Failed to send email:', error);
+      let errorMessage = 'Failed to send message. Please try again.';
+      
+      if (error.status === 400) {
+        if (error.text && error.text.includes('template ID not found')) {
+          errorMessage = 'EmailJS template not configured properly. Please contact the administrator.';
+        } else if (error.text && error.text.includes('service ID not found')) {
+          errorMessage = 'EmailJS service not configured properly. Please contact the administrator.';
+        } else {
+          errorMessage = 'Invalid EmailJS configuration. Please check your setup.';
+        }
+      }
+      
+      // Show error toast
+      toast.error('Message Failed to Send', {
+        description: errorMessage,
+        duration: 8000,
+      });
+      
+      setSubmitError(errorMessage);
+      
+      // Hide error message after 10 seconds
       setTimeout(() => {
-        setSubmitSuccess(false);
-      }, 5000);
-      
-    } catch (error) {
-      console.error('Failed to submit contact form:', error);
+        setSubmitError(null);
+      }, 10000);
     } finally {
       setIsSubmitting(false);
     }
@@ -130,16 +192,16 @@ const Contact: React.FC = () => {
           </p>
         </div>
 
-        {/* Success Message */}
-        {submitSuccess && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+        {/* Error Message */}
+        {submitError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Send className="h-5 w-5 text-green-400" />
+                <Mail className="h-5 w-5 text-red-400" />
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
-                  Message sent successfully! We'll get back to you soon.
+                <p className="text-sm font-medium text-red-800">
+                  {submitError}
                 </p>
               </div>
             </div>
@@ -188,6 +250,7 @@ const Contact: React.FC = () => {
                 Mobile Number
               </label>
               <PhoneInput
+                key={`phone-${formKey}`}
                 value={formData.mobile}
                 onChange={(value) => handleInputChange('mobile', value)}
                 placeholder="Enter your mobile number"
@@ -239,19 +302,7 @@ const Contact: React.FC = () => {
           </form>
         </div>
 
-        {/* Contact Info */}
-        <div className="mt-8 text-center text-gray-600">
-          <p className="text-sm">
-            You can also reach us directly at{' '}
-            <a href="mailto:support@example.com" className="text-blue-600 hover:text-blue-800">
-              support@example.com
-            </a>{' '}
-            or call us at{' '}
-            <a href="tel:+1234567890" className="text-blue-600 hover:text-blue-800">
-              +1 (234) 567-8900
-            </a>
-          </p>
-        </div>
+        
       </div>
     </div>
   );
