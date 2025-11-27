@@ -1,29 +1,27 @@
 import express from 'express';
 import AuthUser from '../Models/AuthUserModels.js';
 import { generateToken, refreshToken } from '../Middleware/authMiddleware.js';
+import { transporter } from '../config/nodemailer.js';
 
 const router = express.Router();
+
+// Generate 6-digit password
+const generatePassword = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, role = 'student' } = req.body;
+    const { name, email, role = 'student' } = req.body;
     
     console.log('Registration request:', { name, email });
     
     // Validate required fields
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required'
-      });
-    }
-    
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Passwords do not match'
+        message: 'Name and email are required'
       });
     }
     
@@ -36,21 +34,37 @@ router.post('/register', async (req, res) => {
       });
     }
     
+    // Generate 6-digit password
+    const generatedPassword = generatePassword();
+    
     // Create new user
     const newUser = new AuthUser({
       name,
       email,
-      password,
+      password: generatedPassword,
       role
     });
     
     await newUser.save();
     
+    // Send password via email
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Your Login Password',
+      html: `
+        <h2>Welcome ${name}!</h2>
+        <p>Your account has been created successfully.</p>
+        <p><strong>Your login password is:</strong> <h3>${generatedPassword}</h3></p>
+        <p>Please use this password to login to your account.</p>
+      `
+    });
+    
     console.log('User registered successfully:', newUser.name);
     
     res.status(201).json({
       success: true,
-      message: 'User registered successfully'
+      message: 'User registered successfully. Password sent to your email.'
     });
     
   } catch (error) {
