@@ -58,18 +58,16 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData }: Pro
 
       setUploading(true);
       const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      formDataUpload.append('upload_preset', 'product');
-      formDataUpload.append('cloud_name', 'dz3qjz555');
+      formDataUpload.append('image', file);
 
       try {
-        const response = await fetch('https://api.cloudinary.com/v1_1/dz3qjz555/image/upload', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/images/upload`, {
           method: 'POST',
           body: formDataUpload,
         });
         const data = await response.json();
-        if (data.secure_url) {
-          setFormData(prev => ({ ...prev, image: data.secure_url }));
+        if (data.success && data.url) {
+          setFormData(prev => ({ ...prev, image: data.url }));
         }
       } catch (error) {
         console.error('Image upload error:', error);

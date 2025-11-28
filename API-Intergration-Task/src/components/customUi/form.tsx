@@ -95,8 +95,8 @@ export function CustomForm({ initialData, isEdit, nextId, onSubmit, onOpenChange
 
 						// Handle image upload if new image selected
 						if (selectedImage) {
-							console.log('🖼️ Uploading image to AWS S3...');
-							const uploadResult = await handleImageUpload(selectedImage);
+							console.log(`🖼️ Uploading image to ${!isEdit ? 'Cloudinary' : 'S3'}...`);
+							const uploadResult = await handleImageUpload(selectedImage, !isEdit);
 							
 							if (uploadResult.success) {
 								imageUrl = uploadResult.url || uploadResult.dataUrl || null;
@@ -242,7 +242,7 @@ export function CustomForm({ initialData, isEdit, nextId, onSubmit, onOpenChange
 					
 					{/* Upload Info */}
 					<p className="mt-2 text-xs text-gray-500">
-						Supported formats: JPEG, PNG, GIF, WebP. Max size: 5MB. Images will be uploaded to AWS S3.
+						Supported formats: JPEG, PNG, GIF, WebP. Max size: 5MB. Images will be uploaded to {!isEdit ? 'Cloudinary' : 'AWS S3'}.
 					</p>
 				</div>
 

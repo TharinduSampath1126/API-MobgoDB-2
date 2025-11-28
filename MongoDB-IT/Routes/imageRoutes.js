@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { uploadImageToS3, deleteImageFromS3, extractS3KeyFromUrl } from '../utils/s3Upload.js';
+import { uploadImageToCloudinary, deleteImageFromCloudinary, extractPublicIdFromUrl } from '../utils/cloudinaryUpload.js';
 
 const router = express.Router();
 
@@ -21,26 +22,18 @@ const upload = multer({
   }
 });
 
-// Upload image endpoint
+// Upload product image to S3
 router.post('/upload', upload.single('image'), async (req, res) => {
   try {
-    console.log('📸 Image upload request received');
+    console.log('📸 Product image upload to S3');
     
     if (!req.file) {
-      console.log('❌ No file provided in request');
       return res.status(400).json({
         success: false,
         message: 'No image file provided'
       });
     }
 
-    console.log('📁 File details:', {
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    });
-
-    // Upload to S3
     const uploadResult = await uploadImageToS3(req.file.buffer, req.file.originalname);
 
     if (uploadResult.success) {
@@ -53,6 +46,45 @@ router.post('/upload', upload.single('image'), async (req, res) => {
       });
     } else {
       console.error('💥 S3 upload failed:', uploadResult.error);
+      res.status(500).json({
+        success: false,
+        message: uploadResult.error || 'Failed to upload image'
+      });
+    }
+
+  } catch (error) {
+    console.error('💥 Image upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to upload image'
+    });
+  }
+});
+
+// Upload user image to Cloudinary
+router.post('/upload/user', upload.single('image'), async (req, res) => {
+  try {
+    console.log('📸 User image upload to Cloudinary');
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    const uploadResult = await uploadImageToCloudinary(req.file.buffer, req.file.originalname);
+
+    if (uploadResult.success) {
+      console.log('✅ Cloudinary upload successful:', uploadResult.url);
+      res.json({
+        success: true,
+        message: 'Image uploaded successfully',
+        url: uploadResult.url,
+        publicId: uploadResult.publicId
+      });
+    } else {
+      console.error('💥 Cloudinary upload failed:', uploadResult.error);
       res.status(500).json({
         success: false,
         message: uploadResult.error || 'Failed to upload image'
@@ -82,7 +114,6 @@ router.delete('/delete', async (req, res) => {
 
     console.log('🗑️ Deleting image:', imageUrl);
 
-    // Only delete S3 images (not base64)
     if (imageUrl.includes('amazonaws.com')) {
       const s3Key = extractS3KeyFromUrl(imageUrl);
       
@@ -108,9 +139,32 @@ router.delete('/delete', async (req, res) => {
           message: 'Invalid S3 URL'
         });
       }
+    } else if (imageUrl.includes('cloudinary.com')) {
+      const publicId = extractPublicIdFromUrl(imageUrl);
+      
+      if (publicId) {
+        const deleteResult = await deleteImageFromCloudinary(publicId);
+        
+        if (deleteResult.success) {
+          console.log('✅ Cloudinary delete successful');
+          res.json({
+            success: true,
+            message: 'Image deleted successfully'
+          });
+        } else {
+          console.error('💥 Cloudinary delete failed:', deleteResult.error);
+          res.status(500).json({
+            success: false,
+            message: deleteResult.error || 'Failed to delete image'
+          });
+        }
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid Cloudinary URL'
+        });
+      }
     } else {
-      // Base64 images don't need deletion
-      console.log('ℹ️ Base64 image, no deletion needed');
       res.json({
         success: true,
         message: 'Base64 image, no deletion needed'

@@ -4,6 +4,7 @@ export interface ImageUploadResult {
   dataUrl?: string;
   url?: string;
   key?: string;
+  publicId?: string;
   error?: string;
 }
 
@@ -27,7 +28,7 @@ export const validateImage = (file: File): { valid: boolean; error?: string } =>
   return { valid: true };
 };
 
-// Upload image via backend API (more reliable than direct S3)
+// Upload image via backend API to S3
 export const uploadImageToS3Handler = async (file: File): Promise<ImageUploadResult> => {
   try {
     const validation = validateImage(file);
@@ -35,7 +36,6 @@ export const uploadImageToS3Handler = async (file: File): Promise<ImageUploadRes
       return { success: false, error: validation.error };
     }
 
-    // Create FormData to send file to backend
     const formData = new FormData();
     formData.append('image', file);
 
@@ -51,6 +51,45 @@ export const uploadImageToS3Handler = async (file: File): Promise<ImageUploadRes
         success: true,
         url: result.url,
         key: result.key,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.message || 'Failed to upload image',
+      };
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error during upload',
+    };
+  }
+};
+
+// Upload image via backend API to Cloudinary
+export const uploadImageToCloudinaryHandler = async (file: File): Promise<ImageUploadResult> => {
+  try {
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/images/upload/user`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      return {
+        success: true,
+        url: result.url,
+        publicId: result.publicId,
       };
     } else {
       return {
@@ -94,20 +133,21 @@ export const imageToDataUrl = (file: File): Promise<ImageUploadResult> => {
   });
 };
 
-// Main upload handler that tries S3 first, falls back to base64
-export const handleImageUpload = async (file: File): Promise<ImageUploadResult> => {
+// Main upload handler - uses Cloudinary for new users, S3 for existing users
+export const handleImageUpload = async (file: File, isNewUser: boolean = true): Promise<ImageUploadResult> => {
   try {
-    // Try S3 upload first
-    const s3Result = await uploadImageToS3Handler(file);
+    // Use Cloudinary for new users, S3 for existing users
+    const uploadHandler = isNewUser ? uploadImageToCloudinaryHandler : uploadImageToS3Handler;
+    const result = await uploadHandler(file);
     
-    if (s3Result.success) {
-      console.log('✅ S3 upload successful:', s3Result.url);
-      return s3Result;
+    if (result.success) {
+      console.log(`✅ ${isNewUser ? 'Cloudinary' : 'S3'} upload successful:`, result.url);
+      return result;
     }
     
-    console.log('⚠️ S3 upload failed, using base64 fallback:', s3Result.error);
+    console.log(`⚠️ ${isNewUser ? 'Cloudinary' : 'S3'} upload failed, using base64 fallback:`, result.error);
     
-    // Fallback to base64 if S3 fails
+    // Fallback to base64 if upload fails
     const base64Result = await imageToDataUrl(file);
     return base64Result;
     
@@ -127,11 +167,11 @@ export const handleImageUpload = async (file: File): Promise<ImageUploadResult> 
   }
 };
 
-// Delete image from S3 (if needed)
+// Delete image from S3 or Cloudinary
 export const deleteImageFromS3 = async (imageUrl: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Only attempt deletion for S3 URLs
-    if (!imageUrl.includes('amazonaws.com')) {
+    // Only attempt deletion for S3 or Cloudinary URLs
+    if (!imageUrl.includes('amazonaws.com') && !imageUrl.includes('cloudinary.com')) {
       return { success: true }; // Base64 images don't need deletion
     }
 
