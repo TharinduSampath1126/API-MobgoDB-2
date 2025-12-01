@@ -110,7 +110,7 @@ const Contact: React.FC = () => {
         from_email: formData.email,
         from_mobile: formData.mobile,
         message: formData.message,
-        to_name: 'Admin', // You can change this to your name
+        to_name: 'Admin',
         reply_to: formData.email,
       };
 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { ServerPagination } from '@/components/customUi/server-pagination';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+
 
 interface Product {
   id: number;
