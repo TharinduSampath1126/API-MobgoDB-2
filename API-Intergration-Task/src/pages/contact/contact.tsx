@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import emailjs from '@emailjs/browser';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { sendContactEmail } from '@/utils/emailjs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -94,37 +94,12 @@ const Contact: React.FC = () => {
     setSubmitError(null);
     
     try {
-      // EmailJS configuration from environment variables
-      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-      
-      
-      if (!serviceId || !templateId || !publicKey) {
-        throw new Error('EmailJS configuration missing in environment variables');
-      }
-
-      // Prepare email template parameters
-      const templateParams = {
+      await sendContactEmail({
         from_name: formData.name,
         from_email: formData.email,
         from_mobile: formData.mobile,
         message: formData.message,
-        to_name: 'Admin',
-        reply_to: formData.email,
-      };
-
-      console.log('Sending email with parameters:', templateParams);
-
-      
-      const result = await emailjs.send(
-        serviceId,
-        templateId,
-        templateParams,
-        publicKey
-      );
-
-      console.log('Email sent successfully:', result);
+      });
       
       
       toast.success(`Thank you ${formData.name}! Your message has been sent successfully.`, {
