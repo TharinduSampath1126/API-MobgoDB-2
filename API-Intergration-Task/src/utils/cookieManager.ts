@@ -47,7 +47,7 @@ export class CookieManager {
           console.log('Network error during cookie validation:', error);
         }
       }
-    }, 10000); // Check every 10 seconds
+    }, 60 * 1000); // Check every 60 seconds
   }
 
   // Stop monitoring

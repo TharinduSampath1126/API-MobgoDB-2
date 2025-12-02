@@ -4,7 +4,7 @@ import { registrationEmailTemplate } from '../utils/emailTemplates.js';
 
 dotenv.config();
 
-export const transporter = nodemailer.createTransporter({
+export const transporter = nodemailer.createTransport({
   service: 'gmail',
   host: 'smtp.gmail.com',
   port: 587,
