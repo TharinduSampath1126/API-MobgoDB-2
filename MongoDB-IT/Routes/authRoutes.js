@@ -1,23 +1,15 @@
 import express from 'express';
 import AuthUser from '../Models/AuthUserModels.js';
 import { generateToken, refreshToken } from '../Middleware/authMiddleware.js';
-import { transporter } from '../config/nodemailer.js';
+import { registerNewUser } from '../config/nodemailer.js';
 
 const router = express.Router();
-
-// Generate 6-digit password
-const generatePassword = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
 
 // Register new user
 router.post('/register', async (req, res) => {
   try {
     const { name, email, role = 'student' } = req.body;
     
-    console.log('Registration request:', { name, email });
-    
-    // Validate required fields
     if (!name || !email) {
       return res.status(400).json({
         success: false,
@@ -25,60 +17,16 @@ router.post('/register', async (req, res) => {
       });
     }
     
-    // Check if user already exists
-    const existingUser = await AuthUser.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists with this email'
-      });
+    const result = await registerNewUser(name, email, role);
+    
+    if (!result.success) {
+      return res.status(400).json(result);
     }
     
-    // Generate 6-digit password
-    const generatedPassword = generatePassword();
-    
-    // Create new user
-    const newUser = new AuthUser({
-      name,
-      email,
-      password: generatedPassword,
-      role
-    });
-    
-    await newUser.save();
-    
-    // Send password via email
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: 'Your Login Password',
-      html: `
-        <h2>Welcome ${name}!</h2>
-        <p>Your account has been created successfully.</p>
-        <p><strong>Your login password is:</strong> <h3>${generatedPassword}</h3></p>
-        <p>Please use this password to login to your account.</p>
-      `
-    });
-    
-    console.log('User registered successfully:', newUser.name);
-    
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully. Password sent to your email.'
-    });
+    res.status(201).json(result);
     
   } catch (error) {
-    console.error('Registration error:', error);
-    
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        success: false,
-        message: 'Validation failed',
-        errors
-      });
-    }
-    
+    console.error('Registration route error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error during registration'
