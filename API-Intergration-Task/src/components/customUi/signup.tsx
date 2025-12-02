@@ -53,7 +53,7 @@ function signup({ onRegister, onLoginClick }: SignupProps) {
         <div className="bg-white rounded-3xl shadow-xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Register</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign Up</h1>
             <p className="text-gray-500 text-sm">Please sign up to continue</p>
           </div>
 

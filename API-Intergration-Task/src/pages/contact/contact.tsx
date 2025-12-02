@@ -99,7 +99,7 @@ const Contact: React.FC = () => {
       const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
       const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
       
-      // Check if EmailJS is configured
+      
       if (!serviceId || !templateId || !publicKey) {
         throw new Error('EmailJS configuration missing in environment variables');
       }
@@ -116,7 +116,7 @@ const Contact: React.FC = () => {
 
       console.log('Sending email with parameters:', templateParams);
 
-      // Send email using EmailJS
+      
       const result = await emailjs.send(
         serviceId,
         templateId,
@@ -126,13 +126,13 @@ const Contact: React.FC = () => {
 
       console.log('Email sent successfully:', result);
       
-      // Show personalized success toast
+      
       toast.success(`Thank you ${formData.name}! Your message has been sent successfully.`, {
         description: 'We will get back to you soon.',
         duration: 5000,
       });
       
-      // Reset form completely
+      
       setFormData({
         name: '',
         email: '',
@@ -144,7 +144,7 @@ const Contact: React.FC = () => {
       setErrors({});
       setSubmitError(null);
       
-      // Force form re-render to clear PhoneInput
+      
       setFormKey(prev => prev + 1);
       
     } catch (error: any) {

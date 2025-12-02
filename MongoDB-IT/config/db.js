@@ -10,35 +10,35 @@ const connectDB = async () => {
       
     });
     
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    // console.log(`📊 Database Name: ${conn.connection.name}`);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    // console.log(`Database Name: ${conn.connection.name}`);
   } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error.message);
+    console.error("MongoDB Connection Error:", error.message);
     process.exit(1);
   }
 };
 
 // MongoDB connection events
 mongoose.connection.on('connected', () => {
-  // console.log('🔗 Mongoose connected to MongoDB');
+  // console.log('Mongoose connected to MongoDB');
 });
 
 mongoose.connection.on('error', (err) => {
-  console.error('❌ Mongoose connection error:', err);
+  console.error('Mongoose connection error:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.log('🔌 Mongoose disconnected from MongoDB');
+  console.log('Mongoose disconnected from MongoDB');
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
   try {
     await mongoose.connection.close();
-    console.log('🛑 MongoDB connection closed through app termination');
+    console.log('MongoDB connection closed through app termination');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error during MongoDB disconnection:', error);
+    console.error('Error during MongoDB disconnection:', error);
     process.exit(1);
   }
 });
@@ -66,9 +66,9 @@ export const checkDBConnection = () => {
 export const closeDBConnection = async () => {
   try {
     await mongoose.connection.close();
-    console.log('🔌 Database connection closed');
+    console.log('Database connection closed');
   } catch (error) {
-    console.error('❌ Error closing database connection:', error);
+    console.error('Error closing database connection:', error);
   }
 };
 
