@@ -18,7 +18,10 @@ interface Product {
   image?: string;
 }
 
-const API_URL = `${import.meta.env.VITE_API_BASE_URL}/products`;
+const RAW_API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_URL = RAW_API_BASE.endsWith('/products')
+  ? RAW_API_BASE
+  : `${RAW_API_BASE.replace(/\/+$/,'')}/products`;
 
 export default function ManualProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -46,7 +49,34 @@ export default function ManualProductsPage() {
 
   const handleAddProduct = async (formData: any) => {
     try {
-      const response = await axios.post(API_URL, formData);
+      let payload = { ...formData };
+
+      // If image is a File, upload it to backend first and replace with returned URL
+      if (formData.image && typeof formData.image !== 'string') {
+        try {
+          const uploadForm = new FormData();
+          uploadForm.append('image', formData.image as File);
+
+          const uploadUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/images/upload`;
+          const uploadResp = await axios.post(uploadUrl, uploadForm, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+
+          if (uploadResp.data?.success && uploadResp.data?.url) {
+            payload.image = uploadResp.data.url;
+          } else {
+            console.error('Image upload failed:', uploadResp.data);
+            alert('Failed to upload image');
+            return;
+          }
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          alert('Failed to upload image');
+          return;
+        }
+      }
+
+      const response = await axios.post(API_URL, payload);
       setProducts([...products, response.data.product]);
     } catch (error) {
       console.error('Error adding product:', error);

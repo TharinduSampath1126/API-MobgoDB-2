@@ -14,7 +14,7 @@ const generateUniqueFileName = (originalName) => {
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(2, 15);
   const extension = originalName.split('.').pop();
-  return `profile-images/${timestamp}-${randomString}.${extension}`;
+  return `product-images/${timestamp}-${randomString}.${extension}`;
 };
 
 // Upload file to S3

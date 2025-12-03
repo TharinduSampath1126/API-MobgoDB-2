@@ -13,7 +13,7 @@ interface ProductFormData {
   stock: number;
   rating: number;
   description: string;
-  image?: string;
+  image?: string | File;
 }
 
 interface ProductDialogProps {
@@ -55,25 +55,9 @@ export function ProductDialog({ open, onOpenChange, onSubmit, initialData }: Pro
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-
-      setUploading(true);
-      const formDataUpload = new FormData();
-      formDataUpload.append('image', file);
-
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/images/upload`, {
-          method: 'POST',
-          body: formDataUpload,
-        });
-        const data = await response.json();
-        if (data.success && data.url) {
-          setFormData(prev => ({ ...prev, image: data.url }));
-        }
-      } catch (error) {
-        console.error('Image upload error:', error);
-      } finally {
-        setUploading(false);
-      }
+      // Defer actual upload until the Add Product button is clicked.
+      // Store the File object in form state and show preview.
+      setFormData(prev => ({ ...prev, image: file }));
     }
   };
 
